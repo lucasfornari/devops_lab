@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: projeto-nginx
+  labels:
+    app: projeto-nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: projeto-nginx
+  template:
+    metadata:
+      labels:
+        app: projeto-nginx
+    spec:
+      containers:
+        - name: nginx
+          image: projeto-nginx:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
