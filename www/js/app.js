@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const addForm = document.getElementById('add-form');
     const addNome = document.getElementById('add-nome');
     const addMensagem = document.getElementById('add-mensagem');
+    const confirmOverlay = document.getElementById('confirm-overlay');
+    const confirmNomeEl = document.getElementById('confirm-nome');
+    const confirmMensagemEl = document.getElementById('confirm-mensagem');
+    const btnCancelarExclusao = document.getElementById('btn-cancelar-exclusao');
+    const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao');
+
+    let liParaExcluir = null;
 
     const PASTEIS = [
         { bg: 'bg-amber-200', text: 'text-amber-950' },
@@ -39,10 +46,46 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target === modalOverlay) fecharModal();
     });
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
-            fecharModal();
+    function abrirConfirmExclusao(li) {
+        liParaExcluir = li;
+        confirmNomeEl.textContent = li.querySelector('.recado-nome').textContent;
+        confirmMensagemEl.textContent = li.querySelector('.recado-mensagem').textContent;
+        confirmOverlay.classList.remove('hidden');
+        btnCancelarExclusao.focus();
+    }
+
+    function fecharConfirmExclusao() {
+        confirmOverlay.classList.add('hidden');
+        liParaExcluir = null;
+    }
+
+    btnCancelarExclusao.addEventListener('click', fecharConfirmExclusao);
+
+    btnConfirmarExclusao.addEventListener('click', async () => {
+        if (!liParaExcluir) return;
+        const li = liParaExcluir;
+        const id = li.dataset.id;
+        fecharConfirmExclusao();
+        try {
+            const resposta = await fetch(`/api/recados/${id}`, { method: 'DELETE' });
+            if (!resposta.ok) {
+                throw new Error('falha ao excluir recado');
+            }
+            await carregarRecados();
+        } catch (err) {
+            console.error(err);
+            alert('Não foi possível excluir o recado.');
         }
+    });
+
+    confirmOverlay.addEventListener('click', (event) => {
+        if (event.target === confirmOverlay) fecharConfirmExclusao();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        if (!modalOverlay.classList.contains('hidden')) fecharModal();
+        if (!confirmOverlay.classList.contains('hidden')) fecharConfirmExclusao();
     });
 
     addForm.addEventListener('submit', async (event) => {
@@ -179,27 +222,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function excluirRecado(li) {
-        if (!confirm('Excluir este recado?')) return;
-        const id = li.dataset.id;
-        try {
-            const resposta = await fetch(`/api/recados/${id}`, { method: 'DELETE' });
-            if (!resposta.ok) {
-                throw new Error('falha ao excluir recado');
-            }
-            await carregarRecados();
-        } catch (err) {
-            console.error(err);
-            alert('Não foi possível excluir o recado.');
-        }
-    }
-
     lista.addEventListener('click', (event) => {
         const li = event.target.closest('li[data-id]');
         if (!li) return;
 
         if (event.target.closest('.btn-excluir')) {
-            excluirRecado(li);
+            abrirConfirmExclusao(li);
             return;
         }
 

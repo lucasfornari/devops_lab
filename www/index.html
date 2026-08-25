@@ -90,6 +90,30 @@
         </div>
     </div>
 
+    <div id="confirm-overlay" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div id="confirm-card" class="w-full max-w-sm bg-neutral-800 border border-neutral-700 rounded-2xl shadow-2xl p-6">
+            <div class="flex items-start gap-3 mb-5">
+                <span class="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/15 text-red-400 flex-shrink-0">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                </span>
+                <div class="min-w-0 pt-1.5">
+                    <h2 class="text-base font-semibold">Excluir recado?</h2>
+                    <p class="text-sm text-neutral-400 mt-0.5">Essa ação não pode ser desfeita.</p>
+                </div>
+            </div>
+            <div class="rounded-lg bg-neutral-900 border border-neutral-700 px-3.5 py-2.5 mb-6">
+                <p class="text-sm font-medium text-neutral-200" id="confirm-nome"></p>
+                <p class="text-sm text-neutral-400 truncate" id="confirm-mensagem"></p>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button type="button" id="btn-cancelar-exclusao" class="rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-300 hover:bg-neutral-700 transition">Cancelar</button>
+                <button type="button" id="btn-confirmar-exclusao" class="inline-flex items-center gap-2 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-medium px-4 py-2.5 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/app.js"></script>
 </body>
 </html>
