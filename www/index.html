@@ -30,56 +30,65 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased">
-    <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-center gap-2.5 sm:gap-3">
-            <span class="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary-500/15 text-primary-400 flex-shrink-0">
-                <i data-lucide="message-square-text" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-            </span>
-            <h1 class="text-lg sm:text-2xl font-semibold tracking-tight">Meu Projeto</h1>
+<body class="min-h-screen flex flex-col bg-neutral-900 text-neutral-100 antialiased">
+    <header class="sticky top-0 z-30 border-b border-neutral-800 bg-neutral-900/95 backdrop-blur">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <span class="flex items-center justify-center w-9 h-9 rounded-xl bg-primary-500/15 text-primary-400 flex-shrink-0">
+                    <i data-lucide="message-square-text" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                </span>
+                <h1 class="text-base sm:text-xl font-semibold tracking-tight truncate">Mural de Recados</h1>
+            </div>
+            <button id="btn-abrir-modal" type="button"
+                class="inline-flex items-center gap-1.5 sm:gap-2 rounded-lg bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-medium text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-2.5 transition shadow-sm shadow-primary-900/40 flex-shrink-0">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span class="sm:hidden">Adicionar</span>
+                <span class="hidden sm:inline">Adicionar recado</span>
+            </button>
         </div>
     </header>
 
-    <main class="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
-        <p class="text-center text-sm sm:text-base text-slate-400 mb-8 sm:mb-10">
-            Página servida via Nginx dentro de um container Docker.
-        </p>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl shadow-black/20 p-5 sm:p-8">
-            <div class="flex items-center gap-2 mb-5 sm:mb-6">
-                <i data-lucide="pencil-line" class="w-5 h-5 text-primary-400 flex-shrink-0"></i>
-                <h2 class="text-base sm:text-lg font-semibold">Mural de recados</h2>
-            </div>
-
-            <form id="recado-form" class="space-y-4 mb-8 sm:mb-9">
-                <div>
-                    <label for="recado-nome" class="block text-sm font-medium text-slate-300 mb-1.5">Nome</label>
-                    <input type="text" id="recado-nome" placeholder="Seu nome" maxlength="80" required
-                        class="w-full rounded-lg bg-slate-800/60 border border-slate-700 px-3.5 py-2.5 text-sm placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
-                </div>
-                <div>
-                    <label for="recado-mensagem" class="block text-sm font-medium text-slate-300 mb-1.5">Mensagem</label>
-                    <textarea id="recado-mensagem" placeholder="Sua mensagem" maxlength="500" rows="3" required
-                        class="w-full rounded-lg bg-slate-800/60 border border-slate-700 px-3.5 py-2.5 text-sm placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition resize-none"></textarea>
-                </div>
-                <button type="submit"
-                    class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-medium text-sm px-4 py-3 sm:py-2.5 transition shadow-sm shadow-primary-900/40">
-                    <i data-lucide="send" class="w-4 h-4"></i>
-                    Enviar recado
-                </button>
-            </form>
-
-            <div class="flex items-center gap-2 mb-4">
-                <i data-lucide="messages-square" class="w-4 h-4 text-slate-500 flex-shrink-0"></i>
-                <h3 class="text-sm font-medium text-slate-400">Recados recentes</h3>
-            </div>
-            <ul id="recado-lista" class="space-y-3 max-h-96 overflow-y-auto pr-1"></ul>
+    <main class="flex-1 w-full">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+            <ul id="recado-lista" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5"></ul>
         </div>
     </main>
 
-    <footer class="border-t border-slate-800 py-6">
-        <p class="text-center text-xs text-slate-500">&copy; 2026 - Projeto de exemplo</p>
+    <footer class="border-t border-neutral-800 py-6">
+        <p class="text-center text-xs text-neutral-500">&copy; 2026 - Projeto de exemplo</p>
     </footer>
+
+    <div id="modal-overlay" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div id="modal-card" class="w-full max-w-sm bg-neutral-800 border border-neutral-700 rounded-2xl shadow-2xl p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-base font-semibold flex items-center gap-2">
+                    <i data-lucide="sticky-note" class="w-4 h-4 text-primary-400"></i>
+                    Novo recado
+                </h2>
+                <button id="btn-fechar-modal" type="button" class="w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-100 hover:bg-neutral-700 transition" title="Fechar">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="add-form" class="space-y-4">
+                <div>
+                    <label for="add-nome" class="block text-sm font-medium text-neutral-300 mb-1.5">Nome</label>
+                    <input type="text" id="add-nome" placeholder="Seu nome" maxlength="80" required
+                        class="w-full rounded-lg bg-neutral-900 border border-neutral-700 px-3.5 py-2.5 text-sm placeholder:text-neutral-500 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                </div>
+                <div>
+                    <label for="add-mensagem" class="block text-sm font-medium text-neutral-300 mb-1.5">Mensagem</label>
+                    <textarea id="add-mensagem" placeholder="Sua mensagem" maxlength="500" rows="4" required
+                        class="w-full rounded-lg bg-neutral-900 border border-neutral-700 px-3.5 py-2.5 text-sm placeholder:text-neutral-500 outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition resize-none"></textarea>
+                </div>
+                <div class="flex gap-2 justify-end pt-1">
+                    <button type="button" id="btn-cancelar-modal" class="rounded-lg px-4 py-2.5 text-sm font-medium text-neutral-300 hover:bg-neutral-700 transition">Cancelar</button>
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2.5 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="js/app.js"></script>
 </body>

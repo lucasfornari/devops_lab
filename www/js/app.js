@@ -1,59 +1,95 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('recado-form');
-    const nomeInput = document.getElementById('recado-nome');
-    const mensagemInput = document.getElementById('recado-mensagem');
     const lista = document.getElementById('recado-lista');
+    const btnAbrirModal = document.getElementById('btn-abrir-modal');
+    const modalOverlay = document.getElementById('modal-overlay');
+    const btnFecharModal = document.getElementById('btn-fechar-modal');
+    const btnCancelarModal = document.getElementById('btn-cancelar-modal');
+    const addForm = document.getElementById('add-form');
+    const addNome = document.getElementById('add-nome');
+    const addMensagem = document.getElementById('add-mensagem');
 
-    function iniciais(nome) {
-        return nome
-            .trim()
-            .split(/\s+/)
-            .slice(0, 2)
-            .map((parte) => parte[0].toUpperCase())
-            .join('');
+    const PASTEIS = [
+        { bg: 'bg-amber-200', text: 'text-amber-950' },
+        { bg: 'bg-rose-200', text: 'text-rose-950' },
+        { bg: 'bg-emerald-200', text: 'text-emerald-950' },
+        { bg: 'bg-sky-200', text: 'text-sky-950' },
+        { bg: 'bg-violet-200', text: 'text-violet-950' },
+        { bg: 'bg-orange-200', text: 'text-orange-950' },
+    ];
+
+    function corDoRecado(id) {
+        return PASTEIS[id % PASTEIS.length];
     }
 
+    function abrirModal() {
+        modalOverlay.classList.remove('hidden');
+        addNome.focus();
+    }
+
+    function fecharModal() {
+        modalOverlay.classList.add('hidden');
+        addForm.reset();
+    }
+
+    btnAbrirModal.addEventListener('click', abrirModal);
+    btnFecharModal.addEventListener('click', fecharModal);
+    btnCancelarModal.addEventListener('click', fecharModal);
+
+    modalOverlay.addEventListener('click', (event) => {
+        if (event.target === modalOverlay) fecharModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
+            fecharModal();
+        }
+    });
+
+    addForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        try {
+            const resposta = await fetch('/api/recados', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome: addNome.value, mensagem: addMensagem.value }),
+            });
+            if (!resposta.ok) {
+                throw new Error('falha ao enviar recado');
+            }
+            fecharModal();
+            await carregarRecados();
+        } catch (err) {
+            console.error(err);
+            alert('Não foi possível enviar o recado.');
+        }
+    });
+
     function criarRecadoItem(recado) {
+        const cor = corDoRecado(recado.id);
         const li = document.createElement('li');
-        li.className = 'rounded-xl border border-slate-800 bg-slate-800/40 p-4';
+        li.className = `group relative aspect-square rounded-lg ${cor.bg} ${cor.text} p-4 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all flex flex-col`;
         li.dataset.id = recado.id;
-        const data = new Date(recado.criado_em).toLocaleString('pt-BR');
+        const data = new Date(recado.criado_em).toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
 
         li.innerHTML = `
-            <div class="view-mode flex items-start justify-between gap-3">
-                <div class="flex items-start gap-3 min-w-0">
-                    <div class="flex-shrink-0 w-9 h-9 rounded-full bg-primary-500/15 text-primary-400 flex items-center justify-center text-sm font-semibold recado-iniciais"></div>
-                    <div class="min-w-0">
-                        <div class="flex items-baseline gap-2 flex-wrap">
-                            <span class="font-medium text-slate-100 recado-nome"></span>
-                            <span class="text-xs text-slate-500 recado-data"></span>
-                        </div>
-                        <p class="text-sm text-slate-300 mt-0.5 break-words recado-mensagem"></p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-1 flex-shrink-0">
-                    <button type="button" class="btn-editar w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-primary-400 hover:bg-slate-700/60 active:bg-slate-700 transition" title="Editar">
-                        <i data-lucide="pencil" class="w-4 h-4"></i>
-                    </button>
-                    <button type="button" class="btn-excluir w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700/60 active:bg-slate-700 transition" title="Excluir">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                </div>
+            <button type="button" class="btn-excluir absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-black/10 transition" title="Excluir">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <div class="view-mode flex-1 flex flex-col min-h-0 cursor-text">
+                <span class="font-semibold text-sm truncate pr-6 recado-nome"></span>
+                <span class="text-[11px] opacity-60 mb-1.5 recado-data"></span>
+                <p class="text-sm leading-snug whitespace-pre-wrap break-words overflow-y-auto flex-1 note-scroll recado-mensagem"></p>
             </div>
-            <form class="edit-mode hidden mt-3 space-y-2">
-                <input type="text" class="edit-nome w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition" maxlength="80" required>
-                <textarea class="edit-mensagem w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition resize-none" maxlength="500" rows="2" required></textarea>
-                <div class="flex flex-wrap gap-2">
-                    <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium px-3 py-2 transition">
-                        <i data-lucide="check" class="w-3.5 h-3.5"></i> Salvar
-                    </button>
-                    <button type="button" class="btn-cancelar inline-flex items-center gap-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-3 py-2 transition">
-                        <i data-lucide="x" class="w-3.5 h-3.5"></i> Cancelar
-                    </button>
-                </div>
-            </form>
+            <div class="edit-mode hidden flex-1 flex-col min-h-0 gap-1">
+                <input type="text" class="edit-nome bg-transparent font-semibold text-sm outline-none pr-6 border-b border-current/20 focus:border-current/50" maxlength="80">
+                <textarea class="edit-mensagem bg-transparent text-sm leading-snug outline-none resize-none flex-1 note-scroll" maxlength="500"></textarea>
+            </div>
         `;
-        li.querySelector('.recado-iniciais').textContent = iniciais(recado.nome);
         li.querySelector('.recado-nome').textContent = recado.nome;
         li.querySelector('.recado-mensagem').textContent = recado.mensagem;
         li.querySelector('.recado-data').textContent = data;
@@ -66,9 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
         lista.innerHTML = '';
         if (recados.length === 0) {
             lista.innerHTML = `
-                <li class="flex flex-col items-center justify-center gap-2 py-10 text-slate-500">
-                    <i data-lucide="inbox" class="w-8 h-8"></i>
-                    <p class="text-sm">Nenhum recado ainda. Seja o primeiro!</p>
+                <li class="col-span-full flex flex-col items-center justify-center gap-2 py-16 text-neutral-500">
+                    <i data-lucide="sticky-note" class="w-8 h-8"></i>
+                    <p class="text-sm">Nenhum recado ainda. Adicione o primeiro!</p>
                 </li>
             `;
         } else {
@@ -91,67 +127,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        try {
-            const resposta = await fetch('/api/recados', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    nome: nomeInput.value,
-                    mensagem: mensagemInput.value,
-                }),
-            });
-            if (!resposta.ok) {
-                throw new Error('falha ao enviar recado');
-            }
-            form.reset();
-            await carregarRecados();
-        } catch (err) {
-            console.error(err);
-            alert('Não foi possível enviar o recado.');
-        }
-    });
+    function entrarModoEdicao(li) {
+        li.querySelector('.view-mode').classList.add('hidden');
+        const editMode = li.querySelector('.edit-mode');
+        editMode.classList.remove('hidden');
+        editMode.classList.add('flex');
+        li.querySelector('.edit-mensagem').focus();
+    }
 
-    lista.addEventListener('click', async (event) => {
-        const li = event.target.closest('li[data-id]');
-        if (!li) return;
+    function sairModoEdicao(li) {
+        const editMode = li.querySelector('.edit-mode');
+        editMode.classList.add('hidden');
+        editMode.classList.remove('flex');
+        li.querySelector('.view-mode').classList.remove('hidden');
+    }
+
+    async function salvarEdicao(li) {
+        if (!document.body.contains(li)) return;
+
         const id = li.dataset.id;
+        const nomeOriginal = li.querySelector('.recado-nome').textContent;
+        const mensagemOriginal = li.querySelector('.recado-mensagem').textContent;
+        const nome = li.querySelector('.edit-nome').value.trim();
+        const mensagem = li.querySelector('.edit-mensagem').value.trim();
 
-        if (event.target.closest('.btn-editar')) {
-            li.querySelector('.view-mode').classList.add('hidden');
-            li.querySelector('.edit-mode').classList.remove('hidden');
+        if (!nome || !mensagem) {
+            li.querySelector('.edit-nome').value = nomeOriginal;
+            li.querySelector('.edit-mensagem').value = mensagemOriginal;
+            sairModoEdicao(li);
+            return;
+        }
+        if (nome === nomeOriginal && mensagem === mensagemOriginal) {
+            sairModoEdicao(li);
             return;
         }
 
-        if (event.target.closest('.btn-cancelar')) {
-            li.querySelector('.edit-mode').classList.add('hidden');
-            li.querySelector('.view-mode').classList.remove('hidden');
-            return;
-        }
-
-        if (event.target.closest('.btn-excluir')) {
-            if (!confirm('Excluir este recado?')) return;
-            try {
-                const resposta = await fetch(`/api/recados/${id}`, { method: 'DELETE' });
-                if (!resposta.ok) {
-                    throw new Error('falha ao excluir recado');
-                }
-                await carregarRecados();
-            } catch (err) {
-                console.error(err);
-                alert('Não foi possível excluir o recado.');
-            }
-        }
-    });
-
-    lista.addEventListener('submit', async (event) => {
-        const li = event.target.closest('li[data-id]');
-        if (!li) return;
-        event.preventDefault();
-        const id = li.dataset.id;
-        const nome = li.querySelector('.edit-nome').value;
-        const mensagem = li.querySelector('.edit-mensagem').value;
         try {
             const resposta = await fetch(`/api/recados/${id}`, {
                 method: 'PUT',
@@ -165,7 +175,58 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error(err);
             alert('Não foi possível salvar a edição.');
+            sairModoEdicao(li);
         }
+    }
+
+    async function excluirRecado(li) {
+        if (!confirm('Excluir este recado?')) return;
+        const id = li.dataset.id;
+        try {
+            const resposta = await fetch(`/api/recados/${id}`, { method: 'DELETE' });
+            if (!resposta.ok) {
+                throw new Error('falha ao excluir recado');
+            }
+            await carregarRecados();
+        } catch (err) {
+            console.error(err);
+            alert('Não foi possível excluir o recado.');
+        }
+    }
+
+    lista.addEventListener('click', (event) => {
+        const li = event.target.closest('li[data-id]');
+        if (!li) return;
+
+        if (event.target.closest('.btn-excluir')) {
+            excluirRecado(li);
+            return;
+        }
+
+        if (event.target.closest('.view-mode')) {
+            entrarModoEdicao(li);
+        }
+    });
+
+    lista.addEventListener('focusout', (event) => {
+        const li = event.target.closest('li[data-id]');
+        if (!li) return;
+        if (li.querySelector('.edit-mode').classList.contains('hidden')) return;
+        setTimeout(() => {
+            if (!li.contains(document.activeElement)) {
+                salvarEdicao(li);
+            }
+        }, 0);
+    });
+
+    lista.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        const li = event.target.closest('li[data-id]');
+        if (!li || li.querySelector('.edit-mode').classList.contains('hidden')) return;
+        li.querySelector('.edit-nome').value = li.querySelector('.recado-nome').textContent;
+        li.querySelector('.edit-mensagem').value = li.querySelector('.recado-mensagem').textContent;
+        sairModoEdicao(li);
+        event.target.blur();
     });
 
     if (window.lucide) {
