@@ -257,6 +257,59 @@ kubectl delete -f k8s/
 
 ---
 
+## Scripts de inicialização e encerramento
+
+Os scripts da raiz automatizam o ciclo completo do ambiente Kubernetes local
+com Kind. Antes de executar, confirme que `docker`, `kind` e `kubectl` estão
+instalados e que o Docker está em execução.
+
+### Inicializar o ambiente
+
+```bash
+./_init.sh
+```
+
+O script:
+
+1. cria o cluster Kind `fullstack` caso ele ainda não exista;
+2. configura o contexto do `kubectl`;
+3. constrói as imagens `projeto-nginx:latest` e `projeto-web:latest`;
+4. carrega as imagens no cluster;
+5. instala/configura o Metrics Server;
+6. aplica os manifests de `k8s/` e aguarda os deployments.
+
+Para usar outro nome de cluster:
+
+```bash
+KIND_CLUSTER_NAME=meu-cluster ./_init.sh
+```
+
+Ao final, acesse a aplicação com:
+
+```bash
+kubectl port-forward service/projeto-nginx 8080:80
+```
+
+### Encerrar o ambiente
+
+```bash
+./_down.sh
+```
+
+O script remove os recursos definidos em `k8s/` e destrói o cluster Kind,
+incluindo o PVC do Postgres e os dados armazenados nele. Para selecionar outro
+cluster, use a mesma variável:
+
+```bash
+KIND_CLUSTER_NAME=meu-cluster ./_down.sh
+```
+
+> Use `_down.sh` somente quando quiser recriar o ambiente do zero. Para apenas
+> parar os containers do Docker Compose, use `docker compose stop` ou
+> `docker compose down`, conforme a necessidade.
+
+---
+
 ## Parar tudo (Docker Compose + Kubernetes + cluster Kind)
 
 Guia rápido pra derrubar todo o ambiente de uma vez — útil ao final do dia ou
@@ -319,15 +372,12 @@ nome com `kind get clusters` ou `docker ps --filter "name=control-plane"`.
 ## Fluxo resumido
 
 ```bash
-# 1. build das imagens de produção
-docker build -t projeto-nginx:latest .
-docker build -t projeto-web:latest ./web
+# inicializar cluster, imagens, Metrics Server e manifests
+./_init.sh
 
-# 2. (se necessário) carregar as imagens no cluster local — ver seção Kubernetes acima
-
-# 3. deploy no Kubernetes (nginx + web + postgres)
-kubectl apply -f k8s/
-
-# 4. acompanhar
+# acompanhar
 kubectl get pods -w
+
+# encerrar e destruir o cluster Kind
+./_down.sh
 ```
