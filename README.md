@@ -257,6 +257,65 @@ kubectl delete -f k8s/
 
 ---
 
+## Parar tudo (Docker Compose + Kubernetes + cluster Kind)
+
+Guia rápido pra derrubar todo o ambiente de uma vez — útil ao final do dia ou
+antes de liberar recursos da máquina.
+
+### Docker Compose
+
+| Ação | Comando |
+|---|---|
+| Parar e remover containers/rede do projeto | `docker compose down` |
+| Idem, e também remover o volume do Postgres (apaga os dados!) | `docker compose down -v` |
+| Só parar (sem remover containers) | `docker compose stop` |
+| Matar na força bruta (SIGKILL, sem esperar shutdown gracioso) | `docker compose kill` |
+
+### Kubernetes (dentro do cluster)
+
+| Ação | Comando |
+|---|---|
+| Remover deployments + HPAs (mata os pods, mantém service/secret/pvc) | `kubectl delete -f k8s/nginx-deployment.yaml -f k8s/nginx-hpa.yaml -f k8s/web-deployment.yaml -f k8s/web-hpa.yaml -f k8s/postgres-deployment.yaml` |
+| Remover **tudo** da pasta `k8s/` (inclui service, secret e o PVC — cuidado, apaga os dados do Postgres) | `kubectl delete -f k8s/` |
+| Apagar todos os deployments do namespace default | `kubectl delete deployment --all -n default` |
+| Apagar todos os pods do namespace default | `kubectl delete pod --all -n default` |
+| Apagar um pod imediatamente, sem esperar o graceful shutdown | `kubectl delete pod <nome> --grace-period=0 --force` |
+
+> Só rodar `kubectl delete -f k8s/` (ou remover o `postgres-pvc.yaml`) se
+> realmente quiser perder os dados do banco — o `PersistentVolumeClaim` some
+> junto. Pra só parar os pods e poder religar depois com `kubectl apply -f
+> k8s/` sem perder nada, prefira apagar só deployments/HPAs.
+
+### Cluster Kind (o "servidor" Kubernetes local)
+
+O cluster Kind roda dentro de um único container Docker chamado
+`<nome-do-cluster>-control-plane` (ex.: `fullstack-control-plane`). Descubra o
+nome com `kind get clusters` ou `docker ps --filter "name=control-plane"`.
+
+| Ação | Comando |
+|---|---|
+| **Pausar** o cluster (reversível — os dados internos ficam intactos) | `docker stop <cluster>-control-plane` |
+| Religar o cluster pausado | `docker start <cluster>-control-plane` |
+| **Destruir** o cluster de vez (apaga tudo: nodes, volumes, etcd) | `kind delete cluster --name <cluster>` |
+| Listar clusters Kind existentes | `kind get clusters` |
+
+### Docker em geral (matar tudo que estiver rodando na máquina)
+
+| Ação | Comando |
+|---|---|
+| Listar containers em execução | `docker ps` |
+| Parar todos os containers em execução (graceful) | `docker stop $(docker ps -q)` |
+| Matar todos os containers em execução (SIGKILL imediato) | `docker kill $(docker ps -q)` |
+| Remover todos os containers parados | `docker container prune` |
+| Limpeza geral (containers parados, imagens/redes não usadas) | `docker system prune` |
+| Limpeza geral incluindo volumes não usados (cuidado, apaga dados) | `docker system prune --volumes` |
+
+> `docker stop $(docker ps -q)` afeta **todos** os containers Docker da
+> máquina, não só os deste projeto — use com atenção se houver outros
+> projetos rodando ao mesmo tempo.
+
+---
+
 ## Fluxo resumido
 
 ```bash
