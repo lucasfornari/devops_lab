@@ -40,17 +40,23 @@ kind load docker-image projeto-nginx:latest --name "$CLUSTER_NAME"
 kind load docker-image projeto-backend:latest --name "$CLUSTER_NAME"
 
 echo "Instalando/atualizando Metrics Server..."
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# Kind usa certificado self-signed no kubelet; sem --kubelet-insecure-tls o
+# metrics-server rejeita a conexão (probe de prontidão falha com 500). Em vez
+# de aplicar o manifest oficial e corrigir depois com "kubectl patch" — o que
+# sempre criava um pod quebrado na transição até o patch ser aplicado — a
+# flag é injetada no manifest antes do apply, então só existe um rollout.
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml \
+    --dry-run=client -o yaml \
+    | sed '/^[[:space:]]*- args:[[:space:]]*$/a\          - --kubelet-insecure-tls' \
+    | kubectl apply -f -
 
 METRICS_ARGS="$(
     kubectl -n kube-system get deployment metrics-server \
         -o jsonpath='{.spec.template.spec.containers[0].args[*]}'
 )"
-
 if [[ "$METRICS_ARGS" != *"--kubelet-insecure-tls"* ]]; then
-    echo "Configurando Metrics Server para Kind..."
-    kubectl patch deployment metrics-server -n kube-system --type=json \
-        -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+    echo "Erro: não foi possível injetar --kubelet-insecure-tls no manifest do Metrics Server (o formato do YAML upstream pode ter mudado)." >&2
+    exit 1
 fi
 
 echo "Aguardando Metrics Server..."
