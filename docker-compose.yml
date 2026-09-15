@@ -10,18 +10,31 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
-  web:
+  backend:
     build:
-      context: ./web
-    container_name: web-api
+      context: ./backend
+      target: dev
+    container_name: backend-api
     environment:
-      PGHOST: postgres
-      PGPORT: 5432
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      PGDATABASE: projeto
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/projeto
+      JWT_SECRET: dev-secret-troque-em-producao
+      PORT: 3000
     depends_on:
       - postgres
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    container_name: frontend-web
+    environment:
+      VITE_PROXY_TARGET: http://backend:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
     restart: unless-stopped
 
   nginx:
@@ -30,10 +43,9 @@ services:
     container_name: nginx-server
     ports:
       - "8080:80"
-    volumes:
-      - ./www:/usr/share/nginx/html
     depends_on:
-      - web
+      - backend
+      - frontend
     restart: unless-stopped
 
 volumes:

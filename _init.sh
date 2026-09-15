@@ -33,11 +33,11 @@ kubectl config use-context "$KIND_CONTEXT" >/dev/null
 
 echo "Construindo imagens..."
 docker build -t projeto-nginx:latest .
-docker build -t projeto-web:latest ./web
+docker build -t projeto-backend:latest ./backend
 
 echo "Carregando imagens no Kind..."
 kind load docker-image projeto-nginx:latest --name "$CLUSTER_NAME"
-kind load docker-image projeto-web:latest --name "$CLUSTER_NAME"
+kind load docker-image projeto-backend:latest --name "$CLUSTER_NAME"
 
 echo "Instalando/atualizando Metrics Server..."
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
@@ -61,7 +61,7 @@ kubectl apply -f "$ROOT_DIR/k8s/"
 
 echo "Aguardando os deployments..."
 kubectl rollout status deployment/postgres --timeout=180s
-kubectl rollout status deployment/web --timeout=180s
+kubectl rollout status deployment/backend --timeout=180s
 kubectl rollout status deployment/projeto-nginx --timeout=180s
 
 echo
