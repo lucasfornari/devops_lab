@@ -16,6 +16,7 @@ require_command() {
 require_command docker
 require_command kind
 require_command kubectl
+require_command curl
 
 cd "$ROOT_DIR"
 
@@ -44,10 +45,13 @@ echo "Instalando/atualizando Metrics Server..."
 # metrics-server rejeita a conexão (probe de prontidão falha com 500). Em vez
 # de aplicar o manifest oficial e corrigir depois com "kubectl patch" — o que
 # sempre criava um pod quebrado na transição até o patch ser aplicado — a
-# flag é injetada no manifest antes do apply, então só existe um rollout.
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml \
-    --dry-run=client -o yaml \
-    | sed '/^[[:space:]]*- args:[[:space:]]*$/a\          - --kubelet-insecure-tls' \
+# flag é injetada no manifest (baixado cru via curl, sem passar por "kubectl
+# apply --dry-run=client": isso faz o kubectl mesclar com o estado ao vivo do
+# objeto e, para o APIService do metrics-server, grava resourceVersion/uid na
+# annotation de last-applied-configuration, quebrando o apply seguinte com
+# "resourceVersion: Invalid value: 0: must be specified for an update").
+curl -sL https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml \
+    | sed -E 's/^([[:space:]]*)- args:[[:space:]]*$/\1- args:\n\1  - --kubelet-insecure-tls/' \
     | kubectl apply -f -
 
 METRICS_ARGS="$(
