@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { criarChamado, listarCategorias } from '@/services/chamados'
 import type { Categoria, PrioridadeChamado } from '@/types'
+import AlertError from '@/components/AlertError.vue'
 
 const router = useRouter()
 
@@ -42,32 +43,32 @@ async function enviar() {
 </script>
 
 <template>
-  <div class="pagina">
-    <h1>Novo chamado</h1>
+  <div class="page">
+    <h1 class="mb-6 text-xl font-semibold text-gray-900 dark:text-gray-100">Novo chamado</h1>
 
-    <form class="formulario" @submit.prevent="enviar">
-      <label>
+    <form class="card flex flex-col gap-4" @submit.prevent="enviar">
+      <label class="form-label">
         Título
-        <input v-model="titulo" type="text" required maxlength="150" />
+        <input v-model="titulo" type="text" required maxlength="150" class="form-control" />
       </label>
 
-      <label>
+      <label class="form-label">
         Descrição
-        <textarea v-model="descricao" required maxlength="4000" rows="6"></textarea>
+        <textarea v-model="descricao" required maxlength="4000" rows="6" class="form-control"></textarea>
       </label>
 
-      <label>
+      <label class="form-label">
         Prioridade
-        <select v-model="prioridade">
+        <select v-model="prioridade" class="form-control">
           <option value="BAIXA">Baixa</option>
           <option value="MEDIA">Média</option>
           <option value="ALTA">Alta</option>
         </select>
       </label>
 
-      <label v-if="categorias.length > 0">
+      <label v-if="categorias.length > 0" class="form-label">
         Categoria
-        <select v-model="categoriaId">
+        <select v-model="categoriaId" class="form-control">
           <option value="">Sem categoria</option>
           <option v-for="categoria in categorias" :key="categoria.id" :value="categoria.id">
             {{ categoria.nome }}
@@ -75,69 +76,14 @@ async function enviar() {
         </select>
       </label>
 
-      <p v-if="erro" class="erro">{{ erro }}</p>
+      <AlertError v-if="erro" :mensagem="erro" />
 
-      <div class="acoes">
-        <button type="submit" :disabled="enviando">{{ enviando ? 'Enviando...' : 'Criar chamado' }}</button>
-        <RouterLink to="/">Cancelar</RouterLink>
+      <div class="flex items-center gap-4">
+        <button type="submit" class="btn-primary" :disabled="enviando">
+          {{ enviando ? 'Enviando...' : 'Criar chamado' }}
+        </button>
+        <RouterLink to="/" class="btn-ghost">Cancelar</RouterLink>
       </div>
     </form>
   </div>
 </template>
-
-<style scoped>
-.pagina {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-}
-
-input,
-textarea,
-select {
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  font-family: inherit;
-}
-
-.acoes {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-button {
-  padding: 0.6rem 1.2rem;
-  border-radius: 0.375rem;
-  border: none;
-  background: #2563eb;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.erro {
-  color: #dc2626;
-  font-size: 0.875rem;
-}
-</style>

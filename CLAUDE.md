@@ -136,9 +136,25 @@ persiste o token em `localStorage` via `services/token.ts`.
 `services/api.ts` é o único ponto que fala com `/api` (injeta o Bearer token,
 lança `Error` com a mensagem do backend em respostas não-OK).
 `router/index.ts` tem um `beforeEach` que redireciona pra `/login` quando a
-rota exige auth (`meta.requerAuth`) e não há sessão. Views: lista, formulário
-de novo chamado, detalhe (com comentários e, só pra `AGENTE`/`ADMIN`, o
-seletor de status).
+rota exige auth (`meta.requerAuth`) e não há sessão — esse guard só roda em
+navegação, então qualquer lugar que encerre a sessão fora de uma troca de rota
+(ex.: `AppHeader`) precisa chamar `router.push('/login')` explicitamente, não
+só `auth.logout()`. Views: lista, formulário de novo chamado, detalhe (com
+comentários e, só pra `AGENTE`/`ADMIN`, o seletor de status).
+
+**CSS global (Tailwind v4, via `@tailwindcss/vite` — sem CDN, sem
+`tailwind.config.js`/`postcss.config.js`, tudo em `src/assets/main.css`).**
+Não há mais `<style scoped>` nas views: padrões repetidos (botão, campo de
+formulário, card, badge, alerta de erro) viraram classes em
+`@layer components` (`.btn-primary`, `.btn-ghost`, `.form-control`,
+`.form-label`, `.card`, `.page`, `.badge`, `.alert-error`) — ao criar uma tela
+nova, reaproveite essas classes em vez de escrever CSS novo. Tailwind v4 não
+deixa uma classe custom chamar outra via `@apply` (ex.: `.btn-primary { @apply
+btn ...}` não funciona), por isso cada variante de botão lista os utilitários
+por completo. `src/components/` tem os pedaços de UI reaproveitados entre
+views: `AppHeader.vue` (nav + logout, montado uma vez em `App.vue` quando
+`auth.estaAutenticado`), `StatusBadge.vue`/`PriorityBadge.vue` (mapeiam os
+enums do Prisma pra cor) e `AlertError.vue`.
 
 ### `k8s/`
 

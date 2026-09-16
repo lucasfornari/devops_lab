@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppHeader from '@/components/AppHeader.vue'
 
 const auth = useAuthStore()
 
@@ -13,5 +14,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <RouterView />
+  <div class="min-h-screen">
+    <AppHeader v-if="auth.estaAutenticado" />
+    <RouterView />
+  </div>
 </template>

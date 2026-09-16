@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AlertError from '@/components/AlertError.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -32,98 +33,36 @@ async function enviar() {
 </script>
 
 <template>
-  <div class="pagina-login">
-    <form class="cartao" @submit.prevent="enviar">
-      <h1>{{ modoRegistro ? 'Criar conta' : 'Entrar' }}</h1>
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <form class="card flex w-full max-w-sm flex-col gap-3" @submit.prevent="enviar">
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        {{ modoRegistro ? 'Criar conta' : 'Entrar' }}
+      </h1>
 
-      <label v-if="modoRegistro">
+      <label v-if="modoRegistro" class="form-label">
         Nome
-        <input v-model="nome" type="text" required maxlength="120" />
+        <input v-model="nome" type="text" required maxlength="120" class="form-control" />
       </label>
 
-      <label>
+      <label class="form-label">
         Email
-        <input v-model="email" type="email" required maxlength="160" />
+        <input v-model="email" type="email" required maxlength="160" class="form-control" />
       </label>
 
-      <label>
+      <label class="form-label">
         Senha
-        <input v-model="senha" type="password" required minlength="6" maxlength="72" />
+        <input v-model="senha" type="password" required minlength="6" maxlength="72" class="form-control" />
       </label>
 
-      <p v-if="erro" class="erro">{{ erro }}</p>
+      <AlertError v-if="erro" :mensagem="erro" />
 
-      <button type="submit" :disabled="carregando">
+      <button type="submit" class="btn-primary" :disabled="carregando">
         {{ carregando ? 'Enviando...' : modoRegistro ? 'Registrar' : 'Entrar' }}
       </button>
 
-      <button type="button" class="link" @click="modoRegistro = !modoRegistro">
+      <button type="button" class="btn-ghost self-center text-sm" @click="modoRegistro = !modoRegistro">
         {{ modoRegistro ? 'Já tenho conta' : 'Criar uma conta' }}
       </button>
     </form>
   </div>
 </template>
-
-<style scoped>
-.pagina-login {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.cartao {
-  width: 100%;
-  max-width: 22rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 2rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-}
-
-input {
-  padding: 0.5rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.375rem;
-  font-size: 1rem;
-}
-
-button {
-  padding: 0.6rem;
-  border-radius: 0.375rem;
-  border: none;
-  cursor: pointer;
-}
-
-button[type='submit'] {
-  background: #2563eb;
-  color: white;
-  font-weight: 600;
-}
-
-button[type='submit']:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-button.link {
-  background: transparent;
-  color: #2563eb;
-  font-size: 0.875rem;
-}
-
-.erro {
-  color: #dc2626;
-  font-size: 0.875rem;
-}
-</style>
