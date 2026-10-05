@@ -1,16 +1,21 @@
-import { prisma } from '../../config/prisma';
-import { AppError } from '../../shared/errors/AppError';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../shared/prisma/prisma.service';
 
-const SELECT_PUBLICO = { id: true, nome: true, email: true, papel: true, criadoEm: true } as const;
+@Injectable()
+export class UsuariosService {
+    private readonly camposPublicos = {
+        id: true, nome: true, email: true, papel: true, criadoEm: true,
+    } as const;
 
-export async function buscarPorId(id: number) {
-    const usuario = await prisma.usuario.findUnique({ where: { id }, select: SELECT_PUBLICO });
-    if (!usuario) {
-        throw new AppError('usuário não encontrado', 404);
+    constructor(private readonly prisma: PrismaService) {}
+
+    async buscarPorId(id: number) {
+        const usuario = await this.prisma.usuario.findUnique({ where: { id }, select: this.camposPublicos });
+        if (!usuario) throw new NotFoundException('usuário não encontrado');
+        return usuario;
     }
-    return usuario;
-}
 
-export async function listar() {
-    return prisma.usuario.findMany({ select: SELECT_PUBLICO, orderBy: { nome: 'asc' } });
+    listar() {
+        return this.prisma.usuario.findMany({ select: this.camposPublicos, orderBy: { nome: 'asc' } });
+    }
 }

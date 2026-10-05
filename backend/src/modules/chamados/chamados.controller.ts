@@ -1,41 +1,62 @@
-import { Request, Response } from 'express';
-import { AppError } from '../../shared/errors/AppError';
-import * as chamadosService from './chamados.service';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Papel } from '@prisma/client';
 
-function idDaRota(req: Request): number {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
-        throw new AppError('id de chamado inválido', 400);
+import { Papeis, UsuarioAtual } from '../auth/auth.decorator';
+import { AutenticacaoGuard } from '../auth/auth.guard';
+import { PapeisGuard } from '../auth/papeis.guard';
+import { UsuarioAutenticado } from '../auth/auth.types';
+import { AtualizarResponsavelDto } from './dto/atualizar-responsavel.dto';
+import { AtualizarStatusDto } from './dto/atualizar-status.dto';
+import { CriarChamadoDto } from './dto/criar-chamado.dto';
+import { CriarComentarioDto } from './dto/criar-comentario.dto';
+import { ChamadosService } from './chamados.service';
+
+@Controller('chamados')
+@UseGuards(AutenticacaoGuard, PapeisGuard)
+export class ChamadosController {
+    constructor(private readonly chamadosService: ChamadosService) {}
+
+    @Post()
+    criar(@UsuarioAtual() usuario: UsuarioAutenticado, @Body() dados: CriarChamadoDto) {
+        return this.chamadosService.criar(usuario, dados);
     }
-    return id;
-}
 
-export async function criarController(req: Request, res: Response): Promise<void> {
-    const chamado = await chamadosService.criar(req.usuario!, req.body);
-    res.status(201).json(chamado);
-}
+    @Get()
+    listar(@UsuarioAtual() usuario: UsuarioAutenticado) {
+        return this.chamadosService.listar(usuario);
+    }
 
-export async function listarController(req: Request, res: Response): Promise<void> {
-    const chamados = await chamadosService.listar(req.usuario!);
-    res.status(200).json(chamados);
-}
+    @Get(':id')
+    buscarPorId(@Param('id', ParseIntPipe) id: number, @UsuarioAtual() usuario: UsuarioAutenticado) {
+        return this.chamadosService.buscarPorId(id, usuario);
+    }
 
-export async function buscarPorIdController(req: Request, res: Response): Promise<void> {
-    const chamado = await chamadosService.buscarPorId(idDaRota(req), req.usuario!);
-    res.status(200).json(chamado);
-}
+    @Patch(':id/status')
+    @Papeis(Papel.AGENTE, Papel.ADMIN)
+    atualizarStatus(
+        @Param('id', ParseIntPipe) id: number,
+        @UsuarioAtual() usuario: UsuarioAutenticado,
+        @Body() dados: AtualizarStatusDto,
+    ) {
+        return this.chamadosService.atualizarStatus(id, usuario, dados);
+    }
 
-export async function atualizarStatusController(req: Request, res: Response): Promise<void> {
-    const chamado = await chamadosService.atualizarStatus(idDaRota(req), req.usuario!, req.body);
-    res.status(200).json(chamado);
-}
+    @Patch(':id/responsavel')
+    @Papeis(Papel.AGENTE, Papel.ADMIN)
+    atualizarResponsavel(
+        @Param('id', ParseIntPipe) id: number,
+        @UsuarioAtual() usuario: UsuarioAutenticado,
+        @Body() dados: AtualizarResponsavelDto,
+    ) {
+        return this.chamadosService.atualizarResponsavel(id, usuario, dados);
+    }
 
-export async function atualizarResponsavelController(req: Request, res: Response): Promise<void> {
-    const chamado = await chamadosService.atualizarResponsavel(idDaRota(req), req.usuario!, req.body);
-    res.status(200).json(chamado);
-}
-
-export async function adicionarComentarioController(req: Request, res: Response): Promise<void> {
-    const chamado = await chamadosService.adicionarComentario(idDaRota(req), req.usuario!, req.body);
-    res.status(201).json(chamado);
+    @Post(':id/comentarios')
+    adicionarComentario(
+        @Param('id', ParseIntPipe) id: number,
+        @UsuarioAtual() usuario: UsuarioAutenticado,
+        @Body() dados: CriarComentarioDto,
+    ) {
+        return this.chamadosService.adicionarComentario(id, usuario, dados);
+    }
 }
