@@ -16,9 +16,13 @@ horizontalmente sem replicação de dados).
 
 A API usa autenticação por **JWT** (`Authorization: Bearer <token>`), emitido
 em `POST /api/auth/registrar` e `POST /api/auth/login`. Todo usuário novo é
-criado com o papel `USUARIO` — promover alguém a `AGENTE`/`ADMIN` hoje é feito
-direto no banco (`UPDATE usuarios SET papel = 'ADMIN' WHERE id = ...`), não há
-um fluxo de administração de usuários ainda.
+criado com o papel `USUARIO`. O primeiro `ADMIN` é criado pelo seed
+(`backend/prisma/seed.ts`) a partir de `ADMIN_EMAIL`/`ADMIN_SENHA` — em dev e
+no k8s local: `admin@local.dev` / `admin123`. Promover outros usuários a
+`AGENTE`/`ADMIN` ainda é feito direto no banco
+(`UPDATE usuarios SET papel = 'AGENTE' WHERE id = ...`).
+
+Documentação da API (Swagger): `http://localhost:8080/api/docs`.
 
 | Papel | O que pode fazer |
 |---|---|
@@ -31,10 +35,10 @@ um fluxo de administração de usuários ainda.
 ```
 projeto/
 ├── docker-compose.yml      # Ambiente de desenvolvimento local (nginx + backend + frontend + postgres)
-├── Dockerfile              # Imagem de produção do nginx (builda o frontend e embute o dist/) — usada pelo k8s
 ├── devops/
 │   └── nginx/
 │       ├── Dockerfile          # Imagem de dev usada pelo docker-compose
+│       ├── Dockerfile.prod     # Imagem de produção (builda o frontend e embute o dist/) — usada pelo k8s
 │       ├── nginx.conf          # Configuração principal do Nginx
 │       ├── conf.d.dev/
 │       │   └── default.conf    # Dev: proxy de "/" pro Vite (com HMR) e de "/api/" pro backend
@@ -42,20 +46,22 @@ projeto/
 │           └── default.conf    # Prod: serve o dist/ do frontend e faz proxy de "/api/" pro backend
 ├── backend/
 │   ├── Dockerfile           # Multi-stage: dev (tsx watch), build e prod (compilado)
-│   ├── docker-entrypoint.sh # Monta DATABASE_URL se necessário e roda `prisma migrate deploy` antes de subir
+│   ├── docker-entrypoint.sh # Monta DATABASE_URL se necessário, roda `prisma migrate deploy` e o seed antes de subir
 │   ├── prisma/
 │   │   ├── schema.prisma    # Modelos Usuario, Categoria, Chamado, Comentario
+│   │   ├── seed.ts          # Categorias padrão + primeiro ADMIN (idempotente)
 │   │   └── migrations/      # Histórico de migrations (gerado via `prisma migrate dev`)
 │   └── src/
-│       ├── modules/         # auth/, usuarios/, categorias/, chamados/ — módulos Nest com controller/service/DTO
-│       ├── shared/          # PrismaService e filtro global de erros
-│       ├── config/          # env.ts e o singleton do PrismaClient
-│       ├── app.ts
-│       └── main.ts
+│       ├── modules/         # auth/, usuarios/, categorias/, chamados/ — controller/service/DTO (+ *.spec.ts)
+│       ├── shared/          # PrismaService, filtro global de erros e validação do env
+│       ├── app.module.ts
+│       └── main.ts          # bootstrap + Swagger em /api/docs
 ├── frontend/
 │   ├── Dockerfile           # Multi-stage: dev (servidor do Vite) e build (gera dist/)
 │   └── src/
 │       ├── views/           # Login, lista de chamados, novo chamado, detalhe do chamado
+│       ├── components/      # Header, badges, card de chamado, formulário de comentário
+│       ├── types/           # api.d.ts gerado do Swagger (`npm run gerar:tipos`) + apelidos em index.ts
 │       ├── stores/auth.ts   # Pinia — sessão (token + usuário logado)
 │       ├── services/        # wrapper de fetch pra API e funções por domínio
 │       └── router/          # rotas protegidas por autenticação
@@ -66,7 +72,7 @@ projeto/
 │   ├── backend-deployment.yaml
 │   ├── backend-service.yaml   # Service ClusterIP — só acessível dentro do cluster
 │   ├── backend-hpa.yaml       # HorizontalPodAutoscaler (2-8 réplicas)
-│   ├── backend-secret.yaml    # JWT_SECRET (dev/local apenas)
+│   ├── backend-secret.yaml    # JWT_SECRET e admin inicial (dev/local apenas)
 │   ├── postgres-deployment.yaml
 │   ├── postgres-service.yaml  # Service ClusterIP
 │   ├── postgres-secret.yaml   # Credenciais (dev/local apenas)
@@ -77,7 +83,8 @@ projeto/
 > `devops/nginx/Dockerfile` é a imagem de **dev** usada pelo `docker-compose`:
 > nela o nginx só faz proxy — para o servidor de dev do Vite (porta 5173, com
 > hot reload) e para a API — sem servir nenhum arquivo estático próprio. O
-> `Dockerfile` da raiz é a imagem de **produção** usada pelo Kubernetes: ela
+> `devops/nginx/Dockerfile.prod` é a imagem de **produção** usada pelo Kubernetes
+> (buildada com a raiz do repo como contexto): ela
 > builda o frontend (`npm run build`) em um estágio e copia o `dist/` gerado
 > para dentro da imagem final do nginx, que aí sim serve arquivos estáticos
 > (com fallback de SPA para o Vue Router).
@@ -98,7 +105,19 @@ Isso gera o SQL em `backend/prisma/migrations/` (deve ser commitado) e já
 aplica no banco. Em produção/containers, quem aplica as migrations pendentes é
 o `docker-entrypoint.sh`, que roda `npx prisma migrate deploy` automaticamente
 antes de subir o servidor — seguro mesmo com múltiplas réplicas rodando em
-paralelo (é o padrão que a própria Prisma recomenda para esse cenário).
+paralelo (é o padrão que a própria Prisma recomenda para esse cenário). Em
+seguida ele roda o seed (`prisma/seed.ts`), que só cria o que ainda não existe.
+Para rodar o seed manualmente: `docker compose exec backend npm run seed`.
+
+## Testes e tipos do front
+
+```bash
+cd backend && npm test              # testes unitários (Jest, *.spec.ts ao lado do código)
+cd frontend && npm run gerar:tipos  # regenera src/types/api.d.ts a partir de /api/docs-json (stack no ar)
+```
+
+Ao mudar um DTO ou uma resposta da API, regenere os tipos e commite o
+`api.d.ts`.
 
 Para inspecionar os dados visualmente:
 
@@ -152,13 +171,13 @@ Acesso local (tudo através do nginx, porta única):
 
 ### 1. Build das imagens de produção
 
-O Deployment do nginx usa a imagem `projeto-nginx:latest` (`Dockerfile` da
-raiz — builda o frontend e embute o `dist/`) e o Deployment da API usa
+O Deployment do nginx usa a imagem `projeto-nginx:latest` (`devops/nginx/Dockerfile.prod`
+— builda o frontend e embute o `dist/`) e o Deployment da API usa
 `projeto-backend:latest` (`backend/Dockerfile`, estágio `prod`). O Postgres
 usa a imagem oficial `postgres:16-alpine`, não precisa de build.
 
 ```bash
-docker build -t projeto-nginx:latest .
+docker build -f devops/nginx/Dockerfile.prod -t projeto-nginx:latest .
 docker build -t projeto-backend:latest ./backend --target prod
 ```
 
@@ -191,7 +210,7 @@ no cluster. Use o comando referente ao ambiente que você tiver:
 ```bash
 # Minikube
 eval $(minikube docker-env)
-docker build -t projeto-nginx:latest .
+docker build -f devops/nginx/Dockerfile.prod -t projeto-nginx:latest .
 docker build -t projeto-backend:latest ./backend --target prod
 
 # Kind

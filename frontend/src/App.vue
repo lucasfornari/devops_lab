@@ -14,8 +14,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <AppHeader v-if="auth.estaAutenticado" />
+  <AppHeader v-if="auth.estaAutenticado" />
+  <main class="container py-4">
     <RouterView />
-  </div>
+  </main>
 </template>

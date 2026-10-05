@@ -21,6 +21,8 @@ npx prisma generate              # regenera o client após mudar schema.prisma
 npx prisma migrate dev --name x  # cria + aplica uma migration (precisa de Postgres acessível)
 npm run dev                      # tsx watch — hot reload local, fora de container
 npx tsc --noEmit                 # type-check
+npm test                         # testes unitários (Jest, *.spec.ts ao lado do código)
+npm run seed                     # categorias padrão + primeiro ADMIN (ADMIN_EMAIL/ADMIN_SENHA)
 npm run build && npm start       # build de produção + rodar o compilado
 docker compose exec backend npx prisma studio   # inspecionar dados (com a stack no ar)
 ```
@@ -33,6 +35,7 @@ npm install
 npm run dev      # servidor do Vite com HMR
 npm run build    # type-check (vue-tsc) + build de produção em dist/
 npm run lint     # oxlint + eslint, ambos com --fix
+npm run gerar:tipos  # regenera src/types/api.d.ts do Swagger (/api/docs-json, stack no ar)
 ```
 
 ### Docker Compose (desenvolvimento local)
@@ -63,13 +66,12 @@ Ambos aceitam `KIND_CLUSTER_NAME=<nome>` para usar outro cluster. Após `_init.s
 Build manual das imagens (usadas pelos manifests em `k8s/`):
 
 ```bash
-docker build -t projeto-nginx:latest .                        # builda o frontend e embute o dist/
+docker build -f devops/nginx/Dockerfile.prod -t projeto-nginx:latest .  # builda o frontend e embute o dist/
 docker build -t projeto-backend:latest ./backend --target prod
 ```
 
-Não há suíte de testes automatizados configurada no repositório — type-check
-(`tsc`/`vue-tsc`), lint e a "aplicação em funcionamento" via Compose/k8s são a
-forma de validação usada aqui.
+Validação: testes unitários do backend (`npm test`, sem e2e), type-check
+(`tsc`/`vue-tsc`), lint e a aplicação em funcionamento via Compose/k8s.
 
 ## Arquitetura
 
@@ -78,7 +80,8 @@ forma de validação usada aqui.
 `backend/src/modules/{auth,usuarios,categorias,chamados}/`, cada um com
 `*.module.ts` → `*.controller.ts` → `*.service.ts` e `dto/` para validação de
 entrada. Regras transversais ficam em `backend/src/shared/`: `PrismaService`
-(cliente compartilhado do banco) e `FiltroDeErros` (converte exceções do Nest e
+(única instância do client do banco, via DI), `validarEnv` (o boot falha se
+faltar `DATABASE_URL`/`JWT_SECRET`) e `FiltroDeErros` (converte exceções do Nest e
 erros conhecidos do Prisma — `P2025`/`P2002` — em respostas
 `{ status: 'error', message }`).
 
@@ -90,8 +93,13 @@ usuário autenticado na requisição. O `PapeisGuard` barra por papel
 (`USUARIO` | `AGENTE` | `ADMIN`). Regra
 de escopo dos chamados vive em `chamados.service.ts`: `USUARIO` só vê/comenta
 os próprios chamados (filtro por `solicitanteId`); `AGENTE`/`ADMIN` veem
-todos, e só eles podem mudar `status`/`responsavel`. Não existe rota para
-promover usuário a `AGENTE`/`ADMIN` — hoje isso é feito direto no banco.
+todos, e só eles podem mudar `status`/`responsavel`. O primeiro `ADMIN` vem do
+seed (`prisma/seed.ts`, rodado pelo entrypoint a cada boot, idempotente);
+promover outros usuários ainda é feito direto no banco.
+
+Swagger em `/api/docs`. Os DTOs de entrada têm `@ApiProperty` e as respostas
+são descritas por classes `*-resposta.dto.ts`; o front gera `src/types/api.d.ts`
+a partir disso (`npm run gerar:tipos`) — mudou DTO/resposta, regenere e commite.
 
 ### Modelo de dados (`backend/prisma/schema.prisma`)
 
@@ -120,7 +128,7 @@ de variáveis separadas).
 `devops/nginx/Dockerfile`, usada pelo `docker-compose`) só faz proxy: `/` vai
 pro servidor de dev do Vite (`frontend:5173`, com headers de upgrade pra
 WebSocket/HMR) e `/api/` vai pro `backend:3000`. `devops/nginx/conf.d.prod/default.conf`
-(copiado pelo `Dockerfile` da raiz, usado pelo k8s) serve os arquivos
+(copiado por `devops/nginx/Dockerfile.prod`, buildado com a raiz como contexto, usado pelo k8s) serve os arquivos
 estáticos do `dist/` do frontend com fallback de SPA (`try_files $uri $uri/
 /index.html`, necessário pro Vue Router em modo history não quebrar num
 refresh de rota profunda tipo `/chamados/5`) e também faz proxy de `/api/`
@@ -132,26 +140,32 @@ nginx (ou pelo proxy do Vite em dev, que tem o mesmo efeito).
 SPA em Vue 3 + TypeScript. `stores/auth.ts` (Pinia) guarda token/usuário e
 persiste o token em `localStorage` via `services/token.ts`.
 `services/api.ts` é o único ponto que fala com `/api` (injeta o Bearer token,
-lança `Error` com a mensagem do backend em respostas não-OK).
+lança `Error` com a mensagem do backend em respostas não-OK e, em 401 com
+token, limpa a sessão e recarrega em `/login`). Tipos em `types/index.ts` são
+apelidos dos gerados em `types/api.d.ts`.
 `router/index.ts` tem um `beforeEach` que redireciona pra `/login` quando a
 rota exige auth (`meta.requerAuth`) e não há sessão — esse guard só roda em
 navegação, então qualquer lugar que encerre a sessão fora de uma troca de rota
 (ex.: `AppHeader`) precisa chamar `router.push('/login')` explicitamente, não
-só `auth.logout()`. Views: lista, formulário de novo chamado, detalhe (com
-comentários e, só pra `AGENTE`/`ADMIN`, o seletor de status).
+só `auth.logout()`. Views: lista (cards de resumo por status que
+também filtram), formulário de novo chamado, detalhe em duas colunas
+(descrição + comentários; detalhes e, só pra `AGENTE`/`ADMIN`, o seletor de
+status).
 
-**CSS global (Tailwind v4, via `@tailwindcss/vite` — sem CDN, sem
-`tailwind.config.js`/`postcss.config.js`, tudo em `src/assets/main.css`).**
-Não há mais `<style scoped>` nas views: padrões repetidos (botão, campo de
-formulário, card, badge, alerta de erro) viraram classes em
-`@layer components` (`.btn-primary`, `.btn-ghost`, `.form-control`,
-`.form-label`, `.card`, `.page`, `.badge`, `.alert-error`) — ao criar uma tela
-nova, reaproveite essas classes em vez de escrever CSS novo. Tailwind v4 não
-deixa uma classe custom chamar outra via `@apply` (ex.: `.btn-primary { @apply
-btn ...}` não funciona), por isso cada variante de botão lista os utilitários
-por completo. `src/components/` tem os pedaços de UI reaproveitados entre
-views: `AppHeader.vue` (nav + logout, montado uma vez em `App.vue` quando
-`auth.estaAutenticado`), `StatusBadge.vue`/`PriorityBadge.vue` (mapeiam os
+**Estilo: Bootstrap 5.3 + Bootstrap Icons** (pacotes npm, CSS importado em
+`main.ts`, sem o JS do Bootstrap — menu hambúrguer e dropdown do usuário no
+`AppHeader` abrem/fecham com `ref`; o dropdown usa `data-bs-popper="static"`
+pra alinhar sem Popper). Use classes do Bootstrap nos templates (cards
+`border-0 shadow-sm rounded-4`, botões `rounded-pill`, badges `*-subtle`); o
+CSS próprio fica em `src/assets/main.css` (fundo, `.container` de 1040px,
+`.card-hover`, `.icone-redondo`, `.icone-marca`). Tema claro/escuro segue o sistema via `data-bs-theme`,
+definido em `main.ts`. Navegação é sempre por `<button>` + `router.push`, não
+por `RouterLink`/`href`. `App.vue` monta o header e envolve o `RouterView` em
+`main.container`. `src/components/` tem os pedaços de UI reaproveitados entre
+views: `AppHeader.vue` (navbar + logout, montado uma vez em `App.vue` quando
+`auth.estaAutenticado`), `ChamadoCard.vue` (item da lista, faixa lateral com a
+cor da prioridade), `AvatarIniciais.vue`, `ComentarioForm.vue`
+(v-model + evento `enviar`), `StatusBadge.vue`/`PriorityBadge.vue` (mapeiam os
 enums do Prisma pra cor) e `AlertError.vue`.
 
 ### `k8s/`
@@ -174,7 +188,7 @@ disso, incluindo o patch `--kubelet-insecure-tls` necessário em Kind.
   --name <nome>` (com a stack no ar) e commite os arquivos gerados em
   `prisma/migrations/` — sem isso, `migrate deploy` no próximo boot não tem o
   que aplicar.
-- Ao mudar algo em `backend/` ou `frontend/` ou no `Dockerfile` da raiz, lembre
+- Ao mudar algo em `backend/` ou `frontend/` ou em `devops/nginx/Dockerfile.prod`, lembre
   que as imagens usadas pelo Kubernetes precisam ser reconstruídas e
   recarregadas no cluster (`docker build` + `kind load docker-image`, ou
   simplesmente rodar `_init.sh` de novo) — `kubectl apply` sozinho não repuxa

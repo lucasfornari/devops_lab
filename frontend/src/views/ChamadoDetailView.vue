@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { adicionarComentario, atualizarStatusChamado, buscarChamado } from '@/services/chamados'
 import { useAuthStore } from '@/stores/auth'
 import type { Chamado, StatusChamado } from '@/types'
 import AlertError from '@/components/AlertError.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import PriorityBadge from '@/components/PriorityBadge.vue'
+import ComentarioForm from '@/components/ComentarioForm.vue'
+import AvatarIniciais from '@/components/AvatarIniciais.vue'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 
 const chamado = ref<Chamado | null>(null)
@@ -22,7 +25,12 @@ const ehEquipeSuporte = computed(
   () => auth.usuario?.papel === 'AGENTE' || auth.usuario?.papel === 'ADMIN',
 )
 
-const opcoesStatus: StatusChamado[] = ['ABERTO', 'EM_ANDAMENTO', 'RESOLVIDO', 'FECHADO']
+const opcoesStatus: { valor: StatusChamado; rotulo: string }[] = [
+  { valor: 'ABERTO', rotulo: 'Aberto' },
+  { valor: 'EM_ANDAMENTO', rotulo: 'Em andamento' },
+  { valor: 'RESOLVIDO', rotulo: 'Resolvido' },
+  { valor: 'FECHADO', rotulo: 'Fechado' },
+]
 
 async function carregar() {
   carregando.value = true
@@ -65,75 +73,112 @@ onMounted(carregar)
 </script>
 
 <template>
-  <div class="page flex flex-col gap-4">
-    <RouterLink to="/" class="btn-ghost self-start px-0">&larr; Voltar</RouterLink>
+  <button type="button" class="btn btn-link text-decoration-none px-0 mb-3" @click="router.push('/')">
+    <i class="bi bi-arrow-left me-1"></i> Voltar para chamados
+  </button>
 
-    <p v-if="carregando" class="text-sm text-gray-500 dark:text-gray-400">Carregando...</p>
-    <AlertError v-else-if="erro && !chamado" :mensagem="erro" />
+  <div v-if="carregando" class="text-center text-body-secondary py-5">
+    <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
+  </div>
+  <AlertError v-else-if="erro && !chamado" :mensagem="erro" />
 
-    <template v-else-if="chamado">
-      <header class="flex flex-wrap items-center gap-3">
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ chamado.titulo }}</h1>
-        <StatusBadge :status="chamado.status" />
-        <PriorityBadge :prioridade="chamado.prioridade" />
-      </header>
-
-      <p class="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{{ chamado.descricao }}</p>
-
-      <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-        <dt class="text-gray-500 dark:text-gray-400">Solicitante</dt>
-        <dd>{{ chamado.solicitante.nome }}</dd>
-        <dt class="text-gray-500 dark:text-gray-400">Responsável</dt>
-        <dd>{{ chamado.responsavel?.nome ?? '— não atribuído —' }}</dd>
-        <dt class="text-gray-500 dark:text-gray-400">Categoria</dt>
-        <dd>{{ chamado.categoria?.nome ?? '— sem categoria —' }}</dd>
-      </dl>
-
-      <div v-if="ehEquipeSuporte">
-        <label class="form-label max-w-xs">
-          Status
-          <select
-            :value="chamado.status"
-            :disabled="atualizandoStatus"
-            class="form-control"
-            @change="mudarStatus(($event.target as HTMLSelectElement).value as StatusChamado)"
-          >
-            <option v-for="opcao in opcoesStatus" :key="opcao" :value="opcao">{{ opcao }}</option>
-          </select>
-        </label>
+  <div v-else-if="chamado" class="row g-4">
+    <div class="col-12 col-lg-8 d-flex flex-column gap-4">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+          <span class="small text-body-secondary fw-semibold">
+            #{{ chamado.id }} · aberto em {{ new Date(chamado.criadoEm).toLocaleString('pt-BR') }}
+          </span>
+          <h1 class="h4 fw-bold mt-1 mb-2">{{ chamado.titulo }}</h1>
+          <div class="d-flex gap-1 mb-4">
+            <StatusBadge :status="chamado.status" />
+            <PriorityBadge :prioridade="chamado.prioridade" />
+          </div>
+          <p class="mb-0" style="white-space: pre-wrap">{{ chamado.descricao }}</p>
+        </div>
       </div>
 
-      <section class="flex flex-col gap-3">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Comentários</h2>
-        <ul class="flex flex-col gap-3">
-          <li
-            v-for="comentario in chamado.comentarios"
-            :key="comentario.id"
-            class="card py-3"
-          >
-            <strong class="text-sm text-gray-900 dark:text-gray-100">{{ comentario.autor.nome }}</strong>
-            <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">
-              {{ comentario.mensagem }}
-            </p>
-          </li>
-        </ul>
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-4">
+            <i class="bi bi-chat-left-text me-2"></i>Comentários
+            <span class="badge rounded-pill bg-body-tertiary text-body-secondary ms-1">
+              {{ chamado.comentarios?.length ?? 0 }}
+            </span>
+          </h2>
 
-        <form class="mt-2 flex flex-col gap-2" @submit.prevent="enviarComentario">
-          <textarea
-            v-model="novoComentario"
-            rows="3"
-            maxlength="2000"
-            placeholder="Escreva um comentário..."
-            required
-            class="form-control"
-          ></textarea>
-          <button type="submit" class="btn-primary self-start" :disabled="enviandoComentario">
-            {{ enviandoComentario ? 'Enviando...' : 'Comentar' }}
-          </button>
-        </form>
-      </section>
+          <p v-if="!chamado.comentarios?.length" class="text-body-secondary small">Nenhum comentário ainda.</p>
+          <div v-else class="d-flex flex-column gap-3 mb-4">
+            <div v-for="comentario in chamado.comentarios" :key="comentario.id" class="d-flex gap-3">
+              <AvatarIniciais :nome="comentario.autor.nome" />
+              <div class="flex-grow-1" style="min-width: 0">
+                <div class="d-flex flex-wrap align-items-baseline gap-2 mb-1">
+                  <strong class="small">{{ comentario.autor.nome }}</strong>
+                  <small class="text-body-secondary">
+                    {{ new Date(comentario.criadoEm).toLocaleString('pt-BR') }}
+                  </small>
+                </div>
+                <div class="bg-body-tertiary rounded-3 px-3 py-2 small" style="white-space: pre-wrap">{{ comentario.mensagem }}</div>
+              </div>
+            </div>
+          </div>
+
+          <ComentarioForm v-model="novoComentario" :enviando="enviandoComentario" @enviar="enviarComentario" />
+        </div>
+      </div>
 
       <AlertError v-if="erro" :mensagem="erro" />
-    </template>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+          <h2 class="h6 fw-bold mb-3">Detalhes</h2>
+
+          <div v-if="ehEquipeSuporte" class="mb-3">
+            <label for="status" class="form-label small text-body-secondary mb-1">Alterar status</label>
+            <select
+              id="status"
+              :value="chamado.status"
+              :disabled="atualizandoStatus"
+              class="form-select rounded-3"
+              @change="mudarStatus(($event.target as HTMLSelectElement).value as StatusChamado)"
+            >
+              <option v-for="opcao in opcoesStatus" :key="opcao.valor" :value="opcao.valor">{{ opcao.rotulo }}</option>
+            </select>
+          </div>
+
+          <dl class="mb-0 d-flex flex-column gap-3 small">
+            <div>
+              <dt class="text-body-secondary fw-normal mb-1">Solicitante</dt>
+              <dd class="mb-0 d-flex align-items-center gap-2">
+                <AvatarIniciais :nome="chamado.solicitante.nome" :tamanho="28" />
+                {{ chamado.solicitante.nome }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-body-secondary fw-normal mb-1">Responsável</dt>
+              <dd class="mb-0 d-flex align-items-center gap-2">
+                <template v-if="chamado.responsavel">
+                  <AvatarIniciais :nome="chamado.responsavel.nome" :tamanho="28" />
+                  {{ chamado.responsavel.nome }}
+                </template>
+                <span v-else class="text-body-secondary fst-italic">Não atribuído</span>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-body-secondary fw-normal mb-1">Categoria</dt>
+              <dd class="mb-0"><i class="bi bi-tag me-1"></i>{{ chamado.categoria?.nome ?? 'Sem categoria' }}</dd>
+            </div>
+            <div>
+              <dt class="text-body-secondary fw-normal mb-1">Última atualização</dt>
+              <dd class="mb-0">
+                <i class="bi bi-clock me-1"></i>{{ new Date(chamado.atualizadoEm).toLocaleString('pt-BR') }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

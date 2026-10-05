@@ -18,6 +18,8 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/projeto
       JWT_SECRET: dev-secret-troque-em-producao
+      ADMIN_EMAIL: admin@local.dev
+      ADMIN_SENHA: admin123
       PORT: 3000
     depends_on:
       - postgres

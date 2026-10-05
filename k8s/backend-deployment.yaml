@@ -45,13 +45,23 @@ spec:
                 secretKeyRef:
                   name: backend-secret
                   key: JWT_SECRET
+            - name: ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: ADMIN_EMAIL
+            - name: ADMIN_SENHA
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: ADMIN_SENHA
           resources:
             requests:
               cpu: "50m"
               memory: "64Mi"
             limits:
               cpu: "200m"
-              memory: "128Mi"
+              memory: "256Mi"
           readinessProbe:
             httpGet:
               path: /api/health

@@ -2,12 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { api } from '@/services/api'
 import { definirToken, limparToken, obterToken } from '@/services/token'
-import type { Usuario } from '@/types'
-
-interface RespostaAuth {
-  token: string
-  usuario: Usuario
-}
+import type { AuthResposta, Usuario } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(obterToken())
@@ -15,19 +10,19 @@ export const useAuthStore = defineStore('auth', () => {
 
   const estaAutenticado = computed(() => !!token.value)
 
-  function aplicarSessao(resposta: RespostaAuth) {
+  function aplicarSessao(resposta: AuthResposta) {
     token.value = resposta.token
     usuario.value = resposta.usuario
     definirToken(resposta.token)
   }
 
   async function login(email: string, senha: string) {
-    const resposta = await api.post<RespostaAuth>('/auth/login', { email, senha })
+    const resposta = await api.post<AuthResposta>('/auth/login', { email, senha })
     aplicarSessao(resposta)
   }
 
   async function registrar(nome: string, email: string, senha: string) {
-    const resposta = await api.post<RespostaAuth>('/auth/registrar', { nome, email, senha })
+    const resposta = await api.post<AuthResposta>('/auth/registrar', { nome, email, senha })
     aplicarSessao(resposta)
   }
 

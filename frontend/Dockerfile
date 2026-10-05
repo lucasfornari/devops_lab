@@ -7,7 +7,7 @@ COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host"]
 
-# Build de produção: gera dist/ estático, consumido pelo Dockerfile de nginx da raiz.
+# Build de produção: gera dist/ estático, mesmo processo usado em devops/nginx/Dockerfile.prod.
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./

@@ -2,11 +2,13 @@
   "name": "projeto-backend",
   "version": "1.0.0",
   "private": true,
-  "main": "dist/main.js",
+  "main": "dist/src/main.js",
   "scripts": {
     "dev": "ts-node src/main.ts",
-    "build": "tsc",
-    "start": "node dist/main.js",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/src/main.js",
+    "seed": "ts-node prisma/seed.ts",
+    "test": "jest",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
@@ -15,6 +17,7 @@
     "@nestjs/core": "^11.1.6",
     "@nestjs/jwt": "^11.0.1",
     "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/swagger": "^11.4.7",
     "@prisma/client": "^6.16.3",
     "bcryptjs": "^3.0.2",
     "class-transformer": "^0.5.1",
@@ -25,8 +28,32 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.15.30",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "rootDir": "src",
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "diagnostics": {
+            "ignoreCodes": [
+              151002
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "overrides": {
+    "@nestjs/swagger": {
+      "js-yaml": "^5.4.3"
+    }
   }
 }

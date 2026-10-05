@@ -7,4 +7,10 @@ fi
 
 npx prisma migrate deploy
 
+if [ -f dist/prisma/seed.js ]; then
+    node dist/prisma/seed.js || echo "aviso: seed falhou"
+else
+    npx ts-node prisma/seed.ts || echo "aviso: seed falhou"
+fi
+
 exec "$@"
