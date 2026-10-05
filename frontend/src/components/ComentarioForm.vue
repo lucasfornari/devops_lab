@@ -12,11 +12,11 @@ const mensagem = defineModel<string>({ required: true })
       maxlength="2000"
       placeholder="Escreva um comentário..."
       required
-      class="form-control"
+      class="form-control rounded-3"
     ></textarea>
-    <div>
-      <button type="submit" class="btn btn-primary" :disabled="enviando">
-        {{ enviando ? 'Enviando...' : 'Comentar' }}
+    <div class="text-end">
+      <button type="submit" class="btn btn-primary rounded-pill px-4" :disabled="enviando">
+        <i class="bi bi-send me-1"></i>{{ enviando ? 'Enviando...' : 'Comentar' }}
       </button>
     </div>
   </form>

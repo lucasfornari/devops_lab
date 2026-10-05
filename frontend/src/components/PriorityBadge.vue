@@ -11,9 +11,9 @@ const rotulos: Record<PrioridadeChamado, string> = {
 }
 
 const cores: Record<PrioridadeChamado, string> = {
-  BAIXA: 'text-bg-light border',
-  MEDIA: 'text-bg-info',
-  ALTA: 'text-bg-danger',
+  BAIXA: 'bg-secondary-subtle text-secondary-emphasis',
+  MEDIA: 'bg-info-subtle text-info-emphasis',
+  ALTA: 'bg-danger-subtle text-danger-emphasis',
 }
 
 const rotulo = computed(() => rotulos[props.prioridade])
@@ -21,5 +21,7 @@ const cor = computed(() => cores[props.prioridade])
 </script>
 
 <template>
-  <span class="badge" :class="cor">{{ rotulo }}</span>
+  <span class="badge rounded-pill fw-semibold" :class="cor">
+    <i class="bi bi-flag-fill me-1"></i>{{ rotulo }}
+  </span>
 </template>

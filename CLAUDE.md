@@ -147,19 +147,24 @@ apelidos dos gerados em `types/api.d.ts`.
 rota exige auth (`meta.requerAuth`) e não há sessão — esse guard só roda em
 navegação, então qualquer lugar que encerre a sessão fora de uma troca de rota
 (ex.: `AppHeader`) precisa chamar `router.push('/login')` explicitamente, não
-só `auth.logout()`. Views: lista, formulário de novo chamado, detalhe (com
-comentários e, só pra `AGENTE`/`ADMIN`, o seletor de status).
+só `auth.logout()`. Views: lista (cards de resumo por status que
+também filtram), formulário de novo chamado, detalhe em duas colunas
+(descrição + comentários; detalhes e, só pra `AGENTE`/`ADMIN`, o seletor de
+status).
 
-**Estilo: Bootstrap 5.3** (pacote npm, CSS importado em `main.ts`, sem o JS
-do Bootstrap — o menu responsivo do `AppHeader` abre/fecha com um `ref`).
-Use só classes do Bootstrap nos templates; o único CSS próprio é
-`src/assets/main.css` (limita `.container` a 960px, pra header e conteúdo
-ficarem alinhados). Tema claro/escuro segue o sistema via `data-bs-theme`,
+**Estilo: Bootstrap 5.3 + Bootstrap Icons** (pacotes npm, CSS importado em
+`main.ts`, sem o JS do Bootstrap — menu hambúrguer e dropdown do usuário no
+`AppHeader` abrem/fecham com `ref`; o dropdown usa `data-bs-popper="static"`
+pra alinhar sem Popper). Use classes do Bootstrap nos templates (cards
+`border-0 shadow-sm rounded-4`, botões `rounded-pill`, badges `*-subtle`); o
+CSS próprio fica em `src/assets/main.css` (fundo, `.container` de 1040px,
+`.card-hover`, `.icone-redondo`, `.icone-marca`). Tema claro/escuro segue o sistema via `data-bs-theme`,
 definido em `main.ts`. Navegação é sempre por `<button>` + `router.push`, não
 por `RouterLink`/`href`. `App.vue` monta o header e envolve o `RouterView` em
 `main.container`. `src/components/` tem os pedaços de UI reaproveitados entre
 views: `AppHeader.vue` (navbar + logout, montado uma vez em `App.vue` quando
-`auth.estaAutenticado`), `ChamadoCard.vue` (item da lista), `ComentarioForm.vue`
+`auth.estaAutenticado`), `ChamadoCard.vue` (item da lista, faixa lateral com a
+cor da prioridade), `AvatarIniciais.vue`, `ComentarioForm.vue`
 (v-model + evento `enviar`), `StatusBadge.vue`/`PriorityBadge.vue` (mapeiam os
 enums do Prisma pra cor) e `AlertError.vue`.
 

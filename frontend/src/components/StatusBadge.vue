@@ -12,10 +12,10 @@ const rotulos: Record<StatusChamado, string> = {
 }
 
 const cores: Record<StatusChamado, string> = {
-  ABERTO: 'text-bg-primary',
-  EM_ANDAMENTO: 'text-bg-warning',
-  RESOLVIDO: 'text-bg-success',
-  FECHADO: 'text-bg-secondary',
+  ABERTO: 'bg-primary-subtle text-primary-emphasis',
+  EM_ANDAMENTO: 'bg-warning-subtle text-warning-emphasis',
+  RESOLVIDO: 'bg-success-subtle text-success-emphasis',
+  FECHADO: 'bg-secondary-subtle text-secondary-emphasis',
 }
 
 const rotulo = computed(() => rotulos[props.status])
@@ -23,5 +23,7 @@ const cor = computed(() => cores[props.status])
 </script>
 
 <template>
-  <span class="badge" :class="cor">{{ rotulo }}</span>
+  <span class="badge rounded-pill fw-semibold" :class="cor">
+    <i class="bi bi-circle-fill me-1" style="font-size: 0.45rem; vertical-align: middle"></i>{{ rotulo }}
+  </span>
 </template>
