@@ -1,5 +1,5 @@
 import { api } from './api'
-import type { Categoria, Chamado, PrioridadeChamado, StatusChamado } from '@/types'
+import type { Categoria, Chamado, NovoChamado, StatusChamado } from '@/types'
 
 export function listarChamados() {
   return api.get<Chamado[]>('/chamados')
@@ -9,7 +9,7 @@ export function buscarChamado(id: number) {
   return api.get<Chamado>(`/chamados/${id}`)
 }
 
-export function criarChamado(dados: { titulo: string; descricao: string; categoriaId?: number; prioridade?: PrioridadeChamado }) {
+export function criarChamado(dados: NovoChamado) {
   return api.post<Chamado>('/chamados', dados)
 }
 

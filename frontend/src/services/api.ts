@@ -1,4 +1,4 @@
-import { obterToken } from './token'
+import { limparToken, obterToken } from './token'
 
 interface ErroApi {
   status: string
@@ -14,6 +14,11 @@ async function requisitar<T>(caminho: string, opcoes: RequestInit = {}): Promise
   }
 
   const resposta = await fetch(`/api${caminho}`, { ...opcoes, headers })
+
+  if (resposta.status === 401 && token) {
+    limparToken()
+    window.location.assign('/login')
+  }
 
   if (resposta.status === 204) {
     return undefined as T

@@ -7,6 +7,7 @@ import type { Chamado, StatusChamado } from '@/types'
 import AlertError from '@/components/AlertError.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import PriorityBadge from '@/components/PriorityBadge.vue'
+import ComentarioForm from '@/components/ComentarioForm.vue'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -118,19 +119,11 @@ onMounted(carregar)
           </li>
         </ul>
 
-        <form class="mt-2 flex flex-col gap-2" @submit.prevent="enviarComentario">
-          <textarea
-            v-model="novoComentario"
-            rows="3"
-            maxlength="2000"
-            placeholder="Escreva um comentário..."
-            required
-            class="form-control"
-          ></textarea>
-          <button type="submit" class="btn-primary self-start" :disabled="enviandoComentario">
-            {{ enviandoComentario ? 'Enviando...' : 'Comentar' }}
-          </button>
-        </form>
+        <ComentarioForm
+          v-model="novoComentario"
+          :enviando="enviandoComentario"
+          @enviar="enviarComentario"
+        />
       </section>
 
       <AlertError v-if="erro" :mensagem="erro" />

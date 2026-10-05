@@ -33,8 +33,8 @@ kind export kubeconfig --name "$CLUSTER_NAME" >/dev/null
 kubectl config use-context "$KIND_CONTEXT" >/dev/null
 
 echo "Construindo imagens..."
-docker build -t projeto-nginx:latest .
-docker build -t projeto-backend:latest ./backend
+docker build -f devops/nginx/Dockerfile.prod -t projeto-nginx:latest .
+docker build -t projeto-backend:latest --target prod ./backend
 
 echo "Carregando imagens no Kind..."
 kind load docker-image projeto-nginx:latest --name "$CLUSTER_NAME"
