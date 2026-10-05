@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Sistema de abertura de chamados (helpdesk) com 3 camadas, cada uma rodando no
 seu próprio container/pod: **nginx** (front-end + proxy reverso de `/api/*`),
-**backend** (API Node.js/Express + TypeScript + Prisma, com auth JWT) e
+**backend** (API Node.js/NestJS + TypeScript + Prisma, com auth JWT) e
 **postgres** (banco). O mesmo conjunto de imagens roda tanto via Docker
 Compose (dev local) quanto via Kubernetes (com HPA em nginx e backend).
 
@@ -76,20 +76,18 @@ forma de validação usada aqui.
 ### Backend — módulos por domínio, não por camada técnica
 
 `backend/src/modules/{auth,usuarios,categorias,chamados}/`, cada um com
-`*.routes.ts` → `*.controller.ts` → `*.service.ts` (e `*.schemas.ts` com os
-schemas de validação em `zod`, quando a rota recebe corpo). Regras
-transversais ficam em `backend/src/shared/`: `AppError` (erro com
-`statusCode`), `errorHandler.ts` (converte `AppError` e erros conhecidos do
-Prisma — `P2025`/`P2002` — em respostas `{ status: 'error', message }`) e
-`asyncHandler.ts` (encaminha rejeições de controllers async para o
-`errorHandler`, já que Express 4 não faz isso sozinho).
+`*.module.ts` → `*.controller.ts` → `*.service.ts` e `dto/` para validação de
+entrada. Regras transversais ficam em `backend/src/shared/`: `PrismaService`
+(cliente compartilhado do banco) e `FiltroDeErros` (converte exceções do Nest e
+erros conhecidos do Prisma — `P2025`/`P2002` — em respostas
+`{ status: 'error', message }`).
 
 ### Auth e papéis
 
 JWT emitido em `POST /api/auth/registrar` (sempre cria papel `USUARIO`) e
-`POST /api/auth/login`, verificado pelo middleware `autenticar` em
-`modules/auth/auth.middleware.ts`, que popula `req.usuario = { id, papel }`.
-`autorizar(...papeis)` barra por papel (`USUARIO` | `AGENTE` | `ADMIN`). Regra
+`POST /api/auth/login`, verificado pelo `AutenticacaoGuard`, que popula o
+usuário autenticado na requisição. O `PapeisGuard` barra por papel
+(`USUARIO` | `AGENTE` | `ADMIN`). Regra
 de escopo dos chamados vive em `chamados.service.ts`: `USUARIO` só vê/comenta
 os próprios chamados (filtro por `solicitanteId`); `AGENTE`/`ADMIN` veem
 todos, e só eles podem mudar `status`/`responsavel`. Não existe rota para

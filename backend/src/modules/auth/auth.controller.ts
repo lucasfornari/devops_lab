@@ -1,12 +1,20 @@
-import { Request, Response } from 'express';
-import * as authService from './auth.service';
+import { Body, Controller, Post } from '@nestjs/common';
 
-export async function registrarController(req: Request, res: Response): Promise<void> {
-    const resultado = await authService.registrar(req.body);
-    res.status(201).json(resultado);
-}
+import { AutenticacaoService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { RegistrarDto } from './dto/registrar.dto';
 
-export async function loginController(req: Request, res: Response): Promise<void> {
-    const resultado = await authService.login(req.body);
-    res.status(200).json(resultado);
+@Controller('auth')
+export class AutenticacaoController {
+    constructor(private readonly authService: AutenticacaoService) {}
+
+    @Post('registrar')
+    registrar(@Body() dados: RegistrarDto) {
+        return this.authService.registrar(dados);
+    }
+
+    @Post('login')
+    login(@Body() dados: LoginDto) {
+        return this.authService.login(dados);
+    }
 }

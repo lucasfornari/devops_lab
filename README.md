@@ -4,7 +4,7 @@ Sistema de abertura de chamados (helpdesk) com 3 camadas, cada uma no seu
 próprio container/pod:
 
 - **nginx** — serve o front-end (SPA em Vue) e faz proxy reverso de `/api/*` para a API
-- **backend** — API em Node.js/Express + TypeScript, com Prisma falando com o Postgres
+- **backend** — API em Node.js/NestJS + TypeScript, com Prisma falando com o Postgres
 - **postgres** — banco de dados
 
 Deploy no Kubernetes com um `Deployment` por componente. `nginx` e `backend`
@@ -47,11 +47,11 @@ projeto/
 │   │   ├── schema.prisma    # Modelos Usuario, Categoria, Chamado, Comentario
 │   │   └── migrations/      # Histórico de migrations (gerado via `prisma migrate dev`)
 │   └── src/
-│       ├── modules/         # auth/, usuarios/, categorias/, chamados/ — cada um com routes/controller/service
-│       ├── shared/          # middlewares (erro, validação, async handler) e AppError
+│       ├── modules/         # auth/, usuarios/, categorias/, chamados/ — módulos Nest com controller/service/DTO
+│       ├── shared/          # PrismaService e filtro global de erros
 │       ├── config/          # env.ts e o singleton do PrismaClient
 │       ├── app.ts
-│       └── server.ts
+│       └── main.ts
 ├── frontend/
 │   ├── Dockerfile           # Multi-stage: dev (servidor do Vite) e build (gera dist/)
 │   └── src/

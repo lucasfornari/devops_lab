@@ -1,51 +1,61 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Papel } from '@prisma/client';
-import { prisma } from '../../config/prisma';
-import { env } from '../../config/env';
-import { AppError } from '../../shared/errors/AppError';
-import { LoginInput, RegistrarInput } from './auth.schemas';
+import * as bcrypt from 'bcryptjs';
 
-const SALT_ROUNDS = 10;
-const EXPIRACAO_TOKEN = '8h';
+import { PrismaService } from '../../shared/prisma/prisma.service';
+import { LoginDto } from './dto/login.dto';
+import { RegistrarDto } from './dto/registrar.dto';
 
-function assinarToken(usuario: { id: number; papel: Papel }): string {
-    return jwt.sign({ id: usuario.id, papel: usuario.papel }, env.jwtSecret, {
-        expiresIn: EXPIRACAO_TOKEN,
-    });
-}
+@Injectable()
+export class AutenticacaoService {
+    private readonly saltRounds = 10;
 
-export async function registrar(dados: RegistrarInput) {
-    const existente = await prisma.usuario.findUnique({ where: { email: dados.email } });
-    if (existente) {
-        throw new AppError('já existe um usuário com este email', 409);
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly jwtService: JwtService,
+    ) {}
+
+    async registrar(dados: RegistrarDto) {
+        const email = dados.email.trim();
+        const existente = await this.prisma.usuario.findUnique({ where: { email } });
+        if (existente) {
+            throw new ConflictException('já existe um usuário com este email');
+        }
+
+        const usuario = await this.prisma.usuario.create({
+            data: {
+                nome: dados.nome.trim(),
+                email,
+                senhaHash: await bcrypt.hash(dados.senha, this.saltRounds),
+                papel: Papel.USUARIO,
+            },
+        });
+
+        return this.respostaDeAutenticacao(usuario);
     }
 
-    const senhaHash = await bcrypt.hash(dados.senha, SALT_ROUNDS);
-    const usuario = await prisma.usuario.create({
-        data: {
-            nome: dados.nome,
-            email: dados.email,
-            senhaHash,
-            papel: Papel.USUARIO,
-        },
-    });
+    async login(dados: LoginDto) {
+        const usuario = await this.prisma.usuario.findUnique({
+            where: { email: dados.email.trim() },
+        });
 
-    const token = assinarToken(usuario);
-    return { token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, papel: usuario.papel } };
-}
+        if (!usuario || !(await bcrypt.compare(dados.senha, usuario.senhaHash))) {
+            throw new UnauthorizedException('email ou senha inválidos');
+        }
 
-export async function login(dados: LoginInput) {
-    const usuario = await prisma.usuario.findUnique({ where: { email: dados.email } });
-    if (!usuario) {
-        throw new AppError('email ou senha inválidos', 401);
+        return this.respostaDeAutenticacao(usuario);
     }
 
-    const senhaValida = await bcrypt.compare(dados.senha, usuario.senhaHash);
-    if (!senhaValida) {
-        throw new AppError('email ou senha inválidos', 401);
+    private respostaDeAutenticacao(usuario: { id: number; nome: string; email: string; papel: Papel }) {
+        return {
+            token: this.jwtService.sign({ id: usuario.id, papel: usuario.papel }),
+            usuario: {
+                id: usuario.id,
+                nome: usuario.nome,
+                email: usuario.email,
+                papel: usuario.papel,
+            },
+        };
     }
-
-    const token = assinarToken(usuario);
-    return { token, usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, papel: usuario.papel } };
 }

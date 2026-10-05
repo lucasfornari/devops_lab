@@ -1,15 +1,19 @@
-import { prisma } from '../../config/prisma';
-import { AppError } from '../../shared/errors/AppError';
-import { CriarCategoriaInput } from './categorias.schemas';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { PrismaService } from '../../shared/prisma/prisma.service';
+import { CriarCategoriaDto } from './dto/criar-categoria.dto';
 
-export async function listar() {
-    return prisma.categoria.findMany({ orderBy: { nome: 'asc' } });
-}
+@Injectable()
+export class CategoriasService {
+    constructor(private readonly prisma: PrismaService) {}
 
-export async function criar(dados: CriarCategoriaInput) {
-    const existente = await prisma.categoria.findUnique({ where: { nome: dados.nome } });
-    if (existente) {
-        throw new AppError('já existe uma categoria com este nome', 409);
+    listar() {
+        return this.prisma.categoria.findMany({ orderBy: { nome: 'asc' } });
     }
-    return prisma.categoria.create({ data: { nome: dados.nome } });
+
+    async criar(dados: CriarCategoriaDto) {
+        const nome = dados.nome.trim();
+        const existente = await this.prisma.categoria.findUnique({ where: { nome } });
+        if (existente) throw new ConflictException('já existe uma categoria com este nome');
+        return this.prisma.categoria.create({ data: { nome } });
+    }
 }
