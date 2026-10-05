@@ -3,5 +3,5 @@ defineProps<{ mensagem: string }>()
 </script>
 
 <template>
-  <p class="alert-error">{{ mensagem }}</p>
+  <div class="alert alert-danger py-2 mb-0" role="alert">{{ mensagem }}</div>
 </template>

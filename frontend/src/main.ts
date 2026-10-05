@@ -1,3 +1,4 @@
+import 'bootstrap/dist/css/bootstrap.min.css'
 import './assets/main.css'
 
 import { createApp } from 'vue'
@@ -5,6 +6,9 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+
+const temaEscuro = window.matchMedia('(prefers-color-scheme: dark)').matches
+document.documentElement.dataset.bsTheme = temaEscuro ? 'dark' : 'light'
 
 const app = createApp(App)
 

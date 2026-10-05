@@ -150,17 +150,15 @@ navegação, então qualquer lugar que encerre a sessão fora de uma troca de ro
 só `auth.logout()`. Views: lista, formulário de novo chamado, detalhe (com
 comentários e, só pra `AGENTE`/`ADMIN`, o seletor de status).
 
-**CSS global (Tailwind v4, via `@tailwindcss/vite` — sem CDN, sem
-`tailwind.config.js`/`postcss.config.js`, tudo em `src/assets/main.css`).**
-Não há mais `<style scoped>` nas views: padrões repetidos (botão, campo de
-formulário, card, badge, alerta de erro) viraram classes em
-`@layer components` (`.btn-primary`, `.btn-ghost`, `.form-control`,
-`.form-label`, `.card`, `.page`, `.badge`, `.alert-error`) — ao criar uma tela
-nova, reaproveite essas classes em vez de escrever CSS novo. Tailwind v4 não
-deixa uma classe custom chamar outra via `@apply` (ex.: `.btn-primary { @apply
-btn ...}` não funciona), por isso cada variante de botão lista os utilitários
-por completo. `src/components/` tem os pedaços de UI reaproveitados entre
-views: `AppHeader.vue` (nav + logout, montado uma vez em `App.vue` quando
+**Estilo: Bootstrap 5.3** (pacote npm, CSS importado em `main.ts`, sem o JS
+do Bootstrap — o menu responsivo do `AppHeader` abre/fecha com um `ref`).
+Use só classes do Bootstrap nos templates; o único CSS próprio é
+`src/assets/main.css` (limita `.container` a 960px, pra header e conteúdo
+ficarem alinhados). Tema claro/escuro segue o sistema via `data-bs-theme`,
+definido em `main.ts`. Navegação é sempre por `<button>` + `router.push`, não
+por `RouterLink`/`href`. `App.vue` monta o header e envolve o `RouterView` em
+`main.container`. `src/components/` tem os pedaços de UI reaproveitados entre
+views: `AppHeader.vue` (navbar + logout, montado uma vez em `App.vue` quando
 `auth.estaAutenticado`), `ChamadoCard.vue` (item da lista), `ComentarioForm.vue`
 (v-model + evento `enviar`), `StatusBadge.vue`/`PriorityBadge.vue` (mapeiam os
 enums do Prisma pra cor) e `AlertError.vue`.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { adicionarComentario, atualizarStatusChamado, buscarChamado } from '@/services/chamados'
 import { useAuthStore } from '@/stores/auth'
 import type { Chamado, StatusChamado } from '@/types'
@@ -10,6 +10,7 @@ import PriorityBadge from '@/components/PriorityBadge.vue'
 import ComentarioForm from '@/components/ComentarioForm.vue'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 
 const chamado = ref<Chamado | null>(null)
@@ -66,67 +67,60 @@ onMounted(carregar)
 </script>
 
 <template>
-  <div class="page flex flex-col gap-4">
-    <RouterLink to="/" class="btn-ghost self-start px-0">&larr; Voltar</RouterLink>
+  <button type="button" class="btn btn-outline-secondary btn-sm mb-3" @click="router.push('/')">&larr; Voltar</button>
 
-    <p v-if="carregando" class="text-sm text-gray-500 dark:text-gray-400">Carregando...</p>
-    <AlertError v-else-if="erro && !chamado" :mensagem="erro" />
+  <p v-if="carregando" class="text-body-secondary">Carregando...</p>
+  <AlertError v-else-if="erro && !chamado" :mensagem="erro" />
 
-    <template v-else-if="chamado">
-      <header class="flex flex-wrap items-center gap-3">
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ chamado.titulo }}</h1>
+  <template v-else-if="chamado">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header d-flex flex-wrap align-items-center gap-2">
+        <h1 class="h5 mb-0 flex-grow-1">#{{ chamado.id }} {{ chamado.titulo }}</h1>
         <StatusBadge :status="chamado.status" />
         <PriorityBadge :prioridade="chamado.prioridade" />
-      </header>
-
-      <p class="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{{ chamado.descricao }}</p>
-
-      <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-        <dt class="text-gray-500 dark:text-gray-400">Solicitante</dt>
-        <dd>{{ chamado.solicitante.nome }}</dd>
-        <dt class="text-gray-500 dark:text-gray-400">Responsável</dt>
-        <dd>{{ chamado.responsavel?.nome ?? '— não atribuído —' }}</dd>
-        <dt class="text-gray-500 dark:text-gray-400">Categoria</dt>
-        <dd>{{ chamado.categoria?.nome ?? '— sem categoria —' }}</dd>
-      </dl>
-
-      <div v-if="ehEquipeSuporte">
-        <label class="form-label max-w-xs">
-          Status
-          <select
-            :value="chamado.status"
-            :disabled="atualizandoStatus"
-            class="form-control"
-            @change="mudarStatus(($event.target as HTMLSelectElement).value as StatusChamado)"
-          >
-            <option v-for="opcao in opcoesStatus" :key="opcao" :value="opcao">{{ opcao }}</option>
-          </select>
-        </label>
       </div>
+      <div class="card-body">
+        <p class="card-text" style="white-space: pre-wrap">{{ chamado.descricao }}</p>
 
-      <section class="flex flex-col gap-3">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Comentários</h2>
-        <ul class="flex flex-col gap-3">
-          <li
-            v-for="comentario in chamado.comentarios"
-            :key="comentario.id"
-            class="card py-3"
-          >
-            <strong class="text-sm text-gray-900 dark:text-gray-100">{{ comentario.autor.nome }}</strong>
-            <p class="mt-1 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">
-              {{ comentario.mensagem }}
-            </p>
-          </li>
-        </ul>
+        <dl class="row mb-0 small">
+          <dt class="col-5 col-sm-3 text-body-secondary fw-normal">Solicitante</dt>
+          <dd class="col-7 col-sm-9">{{ chamado.solicitante.nome }}</dd>
+          <dt class="col-5 col-sm-3 text-body-secondary fw-normal">Responsável</dt>
+          <dd class="col-7 col-sm-9">{{ chamado.responsavel?.nome ?? 'não atribuído' }}</dd>
+          <dt class="col-5 col-sm-3 text-body-secondary fw-normal">Categoria</dt>
+          <dd class="col-7 col-sm-9">{{ chamado.categoria?.nome ?? 'sem categoria' }}</dd>
+          <dt class="col-5 col-sm-3 text-body-secondary fw-normal">Aberto em</dt>
+          <dd class="col-7 col-sm-9 mb-0">{{ new Date(chamado.criadoEm).toLocaleString('pt-BR') }}</dd>
+        </dl>
+      </div>
+      <div v-if="ehEquipeSuporte" class="card-footer">
+        <label for="status" class="form-label small mb-1">Status</label>
+        <select
+          id="status"
+          :value="chamado.status"
+          :disabled="atualizandoStatus"
+          class="form-select form-select-sm w-auto"
+          @change="mudarStatus(($event.target as HTMLSelectElement).value as StatusChamado)"
+        >
+          <option v-for="opcao in opcoesStatus" :key="opcao" :value="opcao">{{ opcao }}</option>
+        </select>
+      </div>
+    </div>
 
-        <ComentarioForm
-          v-model="novoComentario"
-          :enviando="enviandoComentario"
-          @enviar="enviarComentario"
-        />
-      </section>
+    <h2 class="h5 mb-3">Comentários</h2>
+    <p v-if="!chamado.comentarios?.length" class="text-body-secondary small">Nenhum comentário ainda.</p>
+    <ul v-else class="list-group mb-3">
+      <li v-for="comentario in chamado.comentarios" :key="comentario.id" class="list-group-item">
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+          <strong class="small">{{ comentario.autor.nome }}</strong>
+          <small class="text-body-secondary">{{ new Date(comentario.criadoEm).toLocaleString('pt-BR') }}</small>
+        </div>
+        <p class="mb-0 mt-1 small" style="white-space: pre-wrap">{{ comentario.mensagem }}</p>
+      </li>
+    </ul>
 
-      <AlertError v-if="erro" :mensagem="erro" />
-    </template>
-  </div>
+    <ComentarioForm v-model="novoComentario" :enviando="enviandoComentario" @enviar="enviarComentario" />
+
+    <AlertError v-if="erro" :mensagem="erro" class="mt-3" />
+  </template>
 </template>

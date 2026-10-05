@@ -33,36 +33,48 @@ async function enviar() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center p-4">
-    <form class="card flex w-full max-w-sm flex-col gap-3" @submit.prevent="enviar">
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-        {{ modoRegistro ? 'Criar conta' : 'Entrar' }}
-      </h1>
+  <div class="row justify-content-center pt-md-5">
+    <div class="col-12 col-sm-10 col-md-7">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h1 class="h4 text-center mb-4">{{ modoRegistro ? 'Criar conta' : 'Entrar' }}</h1>
 
-      <label v-if="modoRegistro" class="form-label">
-        Nome
-        <input v-model="nome" type="text" required maxlength="120" class="form-control" />
-      </label>
+          <form class="d-flex flex-column gap-3" @submit.prevent="enviar">
+            <div v-if="modoRegistro">
+              <label for="nome" class="form-label">Nome</label>
+              <input id="nome" v-model="nome" type="text" required maxlength="120" class="form-control" />
+            </div>
 
-      <label class="form-label">
-        Email
-        <input v-model="email" type="email" required maxlength="160" class="form-control" />
-      </label>
+            <div>
+              <label for="email" class="form-label">Email</label>
+              <input id="email" v-model="email" type="email" required maxlength="160" class="form-control" />
+            </div>
 
-      <label class="form-label">
-        Senha
-        <input v-model="senha" type="password" required minlength="6" maxlength="72" class="form-control" />
-      </label>
+            <div>
+              <label for="senha" class="form-label">Senha</label>
+              <input
+                id="senha"
+                v-model="senha"
+                type="password"
+                required
+                minlength="6"
+                maxlength="72"
+                class="form-control"
+              />
+            </div>
 
-      <AlertError v-if="erro" :mensagem="erro" />
+            <AlertError v-if="erro" :mensagem="erro" />
 
-      <button type="submit" class="btn-primary" :disabled="carregando">
-        {{ carregando ? 'Enviando...' : modoRegistro ? 'Registrar' : 'Entrar' }}
-      </button>
+            <button type="submit" class="btn btn-primary w-100" :disabled="carregando">
+              {{ carregando ? 'Enviando...' : modoRegistro ? 'Registrar' : 'Entrar' }}
+            </button>
 
-      <button type="button" class="btn-ghost self-center text-sm" @click="modoRegistro = !modoRegistro">
-        {{ modoRegistro ? 'Já tenho conta' : 'Criar uma conta' }}
-      </button>
-    </form>
+            <button type="button" class="btn btn-link" @click="modoRegistro = !modoRegistro">
+              {{ modoRegistro ? 'Já tenho conta' : 'Criar uma conta' }}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

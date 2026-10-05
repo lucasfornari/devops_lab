@@ -5,7 +5,7 @@ const mensagem = defineModel<string>({ required: true })
 </script>
 
 <template>
-  <form class="mt-2 flex flex-col gap-2" @submit.prevent="emit('enviar')">
+  <form class="d-flex flex-column gap-2" @submit.prevent="emit('enviar')">
     <textarea
       v-model="mensagem"
       rows="3"
@@ -14,8 +14,10 @@ const mensagem = defineModel<string>({ required: true })
       required
       class="form-control"
     ></textarea>
-    <button type="submit" class="btn-primary self-start" :disabled="enviando">
-      {{ enviando ? 'Enviando...' : 'Comentar' }}
-    </button>
+    <div>
+      <button type="submit" class="btn btn-primary" :disabled="enviando">
+        {{ enviando ? 'Enviando...' : 'Comentar' }}
+      </button>
+    </div>
   </form>
 </template>

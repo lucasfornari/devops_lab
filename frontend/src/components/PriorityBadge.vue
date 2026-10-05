@@ -11,9 +11,9 @@ const rotulos: Record<PrioridadeChamado, string> = {
 }
 
 const cores: Record<PrioridadeChamado, string> = {
-  BAIXA: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-  MEDIA: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-  ALTA: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
+  BAIXA: 'text-bg-light border',
+  MEDIA: 'text-bg-info',
+  ALTA: 'text-bg-danger',
 }
 
 const rotulo = computed(() => rotulos[props.prioridade])
