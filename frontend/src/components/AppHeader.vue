@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AvatarIniciais from '@/components/AvatarIniciais.vue'
+import { ROTULOS_PAPEL } from '@/utils/rotulos'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -46,7 +47,7 @@ function sair() {
       <div class="collapse navbar-collapse" :class="{ show: menuAberto }">
         <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2 ms-md-auto pt-3 pt-md-0">
           <button type="button" class="btn btn-link text-body text-decoration-none" @click="ir('/')">
-            <i class="bi bi-grid me-1"></i> Chamados
+            <i class="bi bi-grid me-1"></i> {{ auth.ehEquipeSuporte ? 'Atendimento' : 'Meus chamados' }}
           </button>
           <button type="button" class="btn btn-primary rounded-pill px-3" @click="ir('/chamados/novo')">
             <i class="bi bi-plus-lg me-1"></i> Novo chamado
@@ -62,7 +63,7 @@ function sair() {
               <AvatarIniciais :nome="auth.usuario.nome" :tamanho="34" />
               <span class="text-start lh-sm">
                 <span class="d-block small fw-semibold">{{ auth.usuario.nome }}</span>
-                <span class="d-block small text-body-secondary">{{ auth.usuario.papel }}</span>
+                <span class="d-block small text-body-secondary">{{ ROTULOS_PAPEL[auth.usuario.papel] }}</span>
               </span>
               <i class="bi bi-chevron-down small ms-auto ms-md-1"></i>
             </button>
@@ -73,6 +74,9 @@ function sair() {
             >
               <span class="dropdown-item-text small text-body-secondary">{{ auth.usuario.email }}</span>
               <hr class="dropdown-divider" />
+              <button v-if="auth.ehAdmin" type="button" class="dropdown-item" @click="ir('/admin')">
+                <i class="bi bi-gear me-2"></i>Configurações
+              </button>
               <button type="button" class="dropdown-item text-danger" @click="sair">
                 <i class="bi bi-box-arrow-right me-2"></i>Sair
               </button>

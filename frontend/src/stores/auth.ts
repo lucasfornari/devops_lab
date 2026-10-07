@@ -3,12 +3,15 @@ import { defineStore } from 'pinia'
 import { api } from '@/services/api'
 import { definirToken, limparToken, obterToken } from '@/services/token'
 import type { AuthResposta, Usuario } from '@/types'
+import { ehEquipeSuporte as verificarEquipeSuporte } from '@/utils/permissoes'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(obterToken())
   const usuario = ref<Usuario | null>(null)
 
   const estaAutenticado = computed(() => !!token.value)
+  const ehAdmin = computed(() => usuario.value?.papel === 'ADMIN')
+  const ehEquipeSuporte = computed(() => verificarEquipeSuporte(usuario.value))
 
   function aplicarSessao(resposta: AuthResposta) {
     token.value = resposta.token
@@ -37,5 +40,15 @@ export const useAuthStore = defineStore('auth', () => {
     limparToken()
   }
 
-  return { token, usuario, estaAutenticado, login, registrar, logout, carregarUsuarioAtual }
+  return {
+    token,
+    usuario,
+    estaAutenticado,
+    ehAdmin,
+    ehEquipeSuporte,
+    login,
+    registrar,
+    logout,
+    carregarUsuarioAtual,
+  }
 })

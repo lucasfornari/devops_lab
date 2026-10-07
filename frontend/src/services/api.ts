@@ -34,10 +34,22 @@ async function requisitar<T>(caminho: string, opcoes: RequestInit = {}): Promise
   return corpo as T
 }
 
+type Query = Record<string, string | number | undefined>
+
+function comQuery(caminho: string, query: Query = {}): string {
+  const parametros = new URLSearchParams()
+  for (const [chave, valor] of Object.entries(query)) {
+    if (valor !== undefined && valor !== '') parametros.set(chave, String(valor))
+  }
+  const texto = parametros.toString()
+  return texto ? `${caminho}?${texto}` : caminho
+}
+
 export const api = {
-  get: <T>(caminho: string) => requisitar<T>(caminho),
+  get: <T>(caminho: string, query?: Query) => requisitar<T>(comQuery(caminho, query)),
   post: <T>(caminho: string, dados?: unknown) =>
     requisitar<T>(caminho, { method: 'POST', body: dados ? JSON.stringify(dados) : undefined }),
   patch: <T>(caminho: string, dados?: unknown) =>
     requisitar<T>(caminho, { method: 'PATCH', body: dados ? JSON.stringify(dados) : undefined }),
+  delete: (caminho: string) => requisitar<void>(caminho, { method: 'DELETE' }),
 }

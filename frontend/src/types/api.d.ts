@@ -11,6 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Verifica se a API está no ar */
         get: operations["AppController_verificarSaude"];
         put?: never;
         post?: never;
@@ -29,6 +30,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Cria uma conta com papel USUARIO e devolve o token */
         post: operations["AutenticacaoController_registrar"];
         delete?: never;
         options?: never;
@@ -45,6 +47,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Autentica com email e senha e devolve o token */
         post: operations["AutenticacaoController_login"];
         delete?: never;
         options?: never;
@@ -59,6 +62,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Dados do usuário autenticado */
         get: operations["UsuariosController_buscarAtual"];
         put?: never;
         post?: never;
@@ -75,13 +79,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Lista usuários, com filtro por papel e busca por nome/email (ADMIN) */
         get: operations["UsuariosController_listar"];
         put?: never;
-        post?: never;
+        /** Cria um usuário com qualquer papel (ADMIN) */
+        post: operations["UsuariosController_criar"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/usuarios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Exclui um usuário sem chamados nem comentários (ADMIN) */
+        delete: operations["UsuariosController_excluir"];
+        options?: never;
+        head?: never;
+        /** Altera nome, email, papel ou senha de um usuário (ADMIN) */
+        patch: operations["UsuariosController_atualizar"];
         trace?: never;
     };
     "/api/categorias": {
@@ -91,13 +115,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Lista as categorias em ordem alfabética */
         get: operations["CategoriasController_listar"];
         put?: never;
+        /** Cria uma categoria (ADMIN) */
         post: operations["CategoriasController_criar"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/categorias/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Exclui uma categoria; os chamados dela ficam sem categoria (ADMIN) */
+        delete: operations["CategoriasController_excluir"];
+        options?: never;
+        head?: never;
+        /** Renomeia uma categoria (ADMIN) */
+        patch: operations["CategoriasController_atualizar"];
         trace?: never;
     };
     "/api/chamados": {
@@ -107,8 +151,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Lista chamados com filtros; USUARIO vê só os próprios */
         get: operations["ChamadosController_listar"];
         put?: never;
+        /** Abre um chamado em nome do usuário autenticado */
         post: operations["ChamadosController_criar"];
         delete?: never;
         options?: never;
@@ -123,13 +169,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Detalhe do chamado com comentários */
         get: operations["ChamadosController_buscarPorId"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Exclui o chamado (ADMIN, ou o solicitante enquanto aberto) */
+        delete: operations["ChamadosController_excluir"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Edita título, descrição, prioridade ou categoria (solicitante só enquanto aberto) */
+        patch: operations["ChamadosController_atualizar"];
         trace?: never;
     };
     "/api/chamados/{id}/status": {
@@ -145,6 +194,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** Altera o status (AGENTE/ADMIN) */
         patch: operations["ChamadosController_atualizarStatus"];
         trace?: never;
     };
@@ -161,6 +211,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** Define o responsável (AGENTE só assume para si; ADMIN atribui a qualquer atendente) */
         patch: operations["ChamadosController_atualizarResponsavel"];
         trace?: never;
     };
@@ -173,6 +224,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Adiciona um comentário e devolve o chamado atualizado */
         post: operations["ChamadosController_adicionarComentario"];
         delete?: never;
         options?: never;
@@ -206,11 +258,23 @@ export interface components {
             email: string;
             senha: string;
         };
+        CriarUsuarioDto: {
+            nome: string;
+            email: string;
+            senha: string;
+            papel: components["schemas"]["Papel"];
+        };
+        AtualizarUsuarioDto: {
+            nome?: string;
+            email?: string;
+            senha?: string;
+            papel?: components["schemas"]["Papel"];
+        };
         CategoriaDto: {
             id: number;
             nome: string;
         };
-        CriarCategoriaDto: {
+        SalvarCategoriaDto: {
             nome: string;
         };
         /** @enum {string} */
@@ -249,6 +313,15 @@ export interface components {
             solicitante: components["schemas"]["UsuarioResumoDto"];
             responsavel: components["schemas"]["UsuarioResumoDto"] | null;
             comentarios?: components["schemas"]["ComentarioDto"][];
+        };
+        /** @enum {string} */
+        FiltroAtribuicao: "MEUS" | "SEM_RESPONSAVEL";
+        AtualizarChamadoDto: {
+            titulo?: string;
+            descricao?: string;
+            prioridade?: components["schemas"]["PrioridadeChamado"];
+            /** @description null remove a categoria */
+            categoriaId?: number | null;
         };
         AtualizarStatusDto: {
             status: components["schemas"]["StatusChamado"];
@@ -352,7 +425,11 @@ export interface operations {
     };
     UsuariosController_listar: {
         parameters: {
-            query?: never;
+            query?: {
+                papel?: components["schemas"]["Papel"];
+                /** @description Texto buscado no nome ou no email */
+                busca?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -365,6 +442,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UsuarioDto"][];
+                };
+            };
+        };
+    };
+    UsuariosController_criar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriarUsuarioDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioDto"];
+                };
+            };
+        };
+    };
+    UsuariosController_excluir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UsuariosController_atualizar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtualizarUsuarioDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsuarioDto"];
                 };
             };
         };
@@ -397,7 +541,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CriarCategoriaDto"];
+                "application/json": components["schemas"]["SalvarCategoriaDto"];
             };
         };
         responses: {
@@ -411,9 +555,61 @@ export interface operations {
             };
         };
     };
-    ChamadosController_listar: {
+    CategoriasController_excluir: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CategoriasController_atualizar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SalvarCategoriaDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoriaDto"];
+                };
+            };
+        };
+    };
+    ChamadosController_listar: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["StatusChamado"];
+                prioridade?: components["schemas"]["PrioridadeChamado"];
+                categoriaId?: number;
+                /** @description Texto buscado no título ou na descrição */
+                busca?: string;
+                /** @description MEUS = sou o responsável; SEM_RESPONSAVEL = ninguém assumiu */
+                atribuicao?: components["schemas"]["FiltroAtribuicao"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -463,6 +659,50 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChamadoDto"];
+                };
+            };
+        };
+    };
+    ChamadosController_excluir: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ChamadosController_atualizar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtualizarChamadoDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
