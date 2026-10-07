@@ -1,0 +1,4 @@
+#DADOS PARA ACESSO ADM - HOMOLOG
+
+• E-mail: admin@local.dev
+• Senha: admin123
