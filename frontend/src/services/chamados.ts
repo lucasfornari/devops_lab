@@ -1,8 +1,8 @@
 import { api } from './api'
-import type { Categoria, Chamado, NovoChamado, StatusChamado } from '@/types'
+import type { Chamado, EdicaoChamado, FiltrosChamados, NovoChamado, StatusChamado } from '@/types'
 
-export function listarChamados() {
-  return api.get<Chamado[]>('/chamados')
+export function listarChamados(filtros: FiltrosChamados = {}) {
+  return api.get<Chamado[]>('/chamados', filtros)
 }
 
 export function buscarChamado(id: number) {
@@ -11,6 +11,14 @@ export function buscarChamado(id: number) {
 
 export function criarChamado(dados: NovoChamado) {
   return api.post<Chamado>('/chamados', dados)
+}
+
+export function atualizarChamado(id: number, dados: EdicaoChamado) {
+  return api.patch<Chamado>(`/chamados/${id}`, dados)
+}
+
+export function excluirChamado(id: number) {
+  return api.delete(`/chamados/${id}`)
 }
 
 export function atualizarStatusChamado(id: number, status: StatusChamado) {
@@ -23,8 +31,4 @@ export function atualizarResponsavelChamado(id: number, responsavelId: number) {
 
 export function adicionarComentario(id: number, mensagem: string) {
   return api.post<Chamado>(`/chamados/${id}/comentarios`, { mensagem })
-}
-
-export function listarCategorias() {
-  return api.get<Categoria[]>('/categorias')
 }

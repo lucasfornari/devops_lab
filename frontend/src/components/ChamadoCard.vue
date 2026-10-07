@@ -42,6 +42,9 @@ function abrir() {
         </div>
         <div class="d-flex flex-wrap gap-3 mt-2 small text-body-secondary">
           <span><i class="bi bi-person me-1"></i>{{ chamado.solicitante.nome }}</span>
+          <span v-if="chamado.responsavel">
+            <i class="bi bi-person-gear me-1"></i>{{ chamado.responsavel.nome }}
+          </span>
           <span><i class="bi bi-tag me-1"></i>{{ chamado.categoria?.nome ?? 'Sem categoria' }}</span>
           <span><i class="bi bi-calendar3 me-1"></i>{{ new Date(chamado.criadoEm).toLocaleDateString('pt-BR') }}</span>
         </div>

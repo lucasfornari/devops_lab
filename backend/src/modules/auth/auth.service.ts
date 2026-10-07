@@ -1,16 +1,14 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Papel } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
 
 import { PrismaService } from '../../shared/prisma/prisma.service';
+import { compararSenha, gerarHashSenha } from '../../shared/seguranca/senha';
 import { LoginDto } from './dto/login.dto';
 import { RegistrarDto } from './dto/registrar.dto';
 
 @Injectable()
 export class AutenticacaoService {
-    private readonly saltRounds = 10;
-
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
@@ -27,7 +25,7 @@ export class AutenticacaoService {
             data: {
                 nome: dados.nome.trim(),
                 email,
-                senhaHash: await bcrypt.hash(dados.senha, this.saltRounds),
+                senhaHash: await gerarHashSenha(dados.senha),
                 papel: Papel.USUARIO,
             },
         });
@@ -40,7 +38,7 @@ export class AutenticacaoService {
             where: { email: dados.email.trim() },
         });
 
-        if (!usuario || !(await bcrypt.compare(dados.senha, usuario.senhaHash))) {
+        if (!usuario || !(await compararSenha(dados.senha, usuario.senhaHash))) {
             throw new UnauthorizedException('email ou senha inválidos');
         }
 

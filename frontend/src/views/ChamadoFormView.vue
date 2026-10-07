@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { criarChamado, listarCategorias } from '@/services/chamados'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { listarCategorias } from '@/services/categorias'
+import { atualizarChamado, buscarChamado, criarChamado } from '@/services/chamados'
 import type { Categoria, PrioridadeChamado } from '@/types'
+import { mensagemDeErro } from '@/utils/erros'
 import AlertError from '@/components/AlertError.vue'
 
+const route = useRoute()
 const router = useRouter()
+
+const idEdicao = computed(() => (route.params.id ? Number(route.params.id) : null))
+const destinoAoSair = computed(() => (idEdicao.value ? `/chamados/${idEdicao.value}` : '/'))
 
 const titulo = ref('')
 const descricao = ref('')
@@ -21,27 +27,47 @@ const opcoesPrioridade: { valor: PrioridadeChamado; rotulo: string; cor: string 
   { valor: 'ALTA', rotulo: 'Alta', cor: 'danger' },
 ]
 
+async function preencherComChamado(id: number) {
+  const chamado = await buscarChamado(id)
+  titulo.value = chamado.titulo
+  descricao.value = chamado.descricao
+  prioridade.value = chamado.prioridade
+  categoriaId.value = chamado.categoria?.id ?? ''
+}
+
 onMounted(async () => {
   try {
-    categorias.value = await listarCategorias()
-  } catch {
-    categorias.value = []
+    const [lista] = await Promise.all([
+      listarCategorias(),
+      idEdicao.value ? preencherComChamado(idEdicao.value) : undefined,
+    ])
+    categorias.value = lista
+  } catch (e) {
+    erro.value = mensagemDeErro(e, 'não foi possível carregar o formulário')
   }
 })
+
+async function salvar() {
+  const dados = {
+    titulo: titulo.value,
+    descricao: descricao.value,
+    prioridade: prioridade.value,
+  }
+  const categoria = categoriaId.value === '' ? null : categoriaId.value
+
+  const chamado = idEdicao.value
+    ? await atualizarChamado(idEdicao.value, { ...dados, categoriaId: categoria })
+    : await criarChamado({ ...dados, categoriaId: categoria ?? undefined })
+  router.push(`/chamados/${chamado.id}`)
+}
 
 async function enviar() {
   erro.value = ''
   enviando.value = true
   try {
-    const chamado = await criarChamado({
-      titulo: titulo.value,
-      descricao: descricao.value,
-      prioridade: prioridade.value,
-      categoriaId: categoriaId.value === '' ? undefined : categoriaId.value,
-    })
-    router.push(`/chamados/${chamado.id}`)
+    await salvar()
   } catch (e) {
-    erro.value = e instanceof Error ? e.message : 'não foi possível criar o chamado'
+    erro.value = mensagemDeErro(e, 'não foi possível salvar o chamado')
   } finally {
     enviando.value = false
   }
@@ -49,8 +75,8 @@ async function enviar() {
 </script>
 
 <template>
-  <button type="button" class="btn btn-link text-decoration-none px-0 mb-3" @click="router.push('/')">
-    <i class="bi bi-arrow-left me-1"></i> Voltar para chamados
+  <button type="button" class="btn btn-link text-decoration-none px-0 mb-3" @click="router.push(destinoAoSair)">
+    <i class="bi bi-arrow-left me-1"></i> Voltar
   </button>
 
   <div class="row justify-content-center">
@@ -62,7 +88,7 @@ async function enviar() {
               <i class="bi bi-pencil-square"></i>
             </span>
             <div>
-              <h1 class="h4 fw-bold mb-0">Novo chamado</h1>
+              <h1 class="h4 fw-bold mb-0">{{ idEdicao ? `Editar chamado #${idEdicao}` : 'Novo chamado' }}</h1>
               <p class="text-body-secondary small mb-0">Descreva o problema com o máximo de detalhes</p>
             </div>
           </div>
@@ -97,7 +123,7 @@ async function enviar() {
             <div class="row g-4">
               <div class="col-12 col-md-6">
                 <span class="form-label fw-semibold d-block">Prioridade</span>
-                <div class="btn-group w-100" role="group">
+                <div class="d-flex gap-2" role="group">
                   <template v-for="opcao in opcoesPrioridade" :key="opcao.valor">
                     <input
                       :id="`prioridade-${opcao.valor}`"
@@ -106,7 +132,11 @@ async function enviar() {
                       class="btn-check"
                       :value="opcao.valor"
                     />
-                    <label :for="`prioridade-${opcao.valor}`" class="btn" :class="`btn-outline-${opcao.cor}`">
+                    <label
+                      :for="`prioridade-${opcao.valor}`"
+                      class="btn rounded-pill flex-fill"
+                      :class="`btn-outline-${opcao.cor}`"
+                    >
                       {{ opcao.rotulo }}
                     </label>
                   </template>
@@ -127,9 +157,12 @@ async function enviar() {
             <AlertError v-if="erro" :mensagem="erro" />
 
             <div class="d-flex flex-column-reverse flex-sm-row justify-content-end gap-2 pt-2">
-              <button type="button" class="btn btn-light rounded-pill px-4" @click="router.push('/')">Cancelar</button>
+              <button type="button" class="btn btn-light rounded-pill px-4" @click="router.push(destinoAoSair)">
+                Cancelar
+              </button>
               <button type="submit" class="btn btn-primary rounded-pill px-4" :disabled="enviando">
-                <i class="bi bi-check-lg me-1"></i>{{ enviando ? 'Enviando...' : 'Criar chamado' }}
+                <i class="bi bi-check-lg me-1"></i>
+                {{ enviando ? 'Salvando...' : idEdicao ? 'Salvar alterações' : 'Criar chamado' }}
               </button>
             </div>
           </form>

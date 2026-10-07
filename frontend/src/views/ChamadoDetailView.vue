@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { adicionarComentario, atualizarStatusChamado, buscarChamado } from '@/services/chamados'
+import { adicionarComentario, buscarChamado, excluirChamado } from '@/services/chamados'
 import { useAuthStore } from '@/stores/auth'
-import type { Chamado, StatusChamado } from '@/types'
+import type { Chamado } from '@/types'
+import { mensagemDeErro } from '@/utils/erros'
+import { podeEditarChamado, podeExcluirChamado } from '@/utils/permissoes'
 import AlertError from '@/components/AlertError.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import PriorityBadge from '@/components/PriorityBadge.vue'
 import ComentarioForm from '@/components/ComentarioForm.vue'
 import AvatarIniciais from '@/components/AvatarIniciais.vue'
+import PainelAtendimento from '@/components/PainelAtendimento.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,18 +22,10 @@ const carregando = ref(true)
 const erro = ref('')
 const novoComentario = ref('')
 const enviandoComentario = ref(false)
-const atualizandoStatus = ref(false)
+const excluindo = ref(false)
 
-const ehEquipeSuporte = computed(
-  () => auth.usuario?.papel === 'AGENTE' || auth.usuario?.papel === 'ADMIN',
-)
-
-const opcoesStatus: { valor: StatusChamado; rotulo: string }[] = [
-  { valor: 'ABERTO', rotulo: 'Aberto' },
-  { valor: 'EM_ANDAMENTO', rotulo: 'Em andamento' },
-  { valor: 'RESOLVIDO', rotulo: 'Resolvido' },
-  { valor: 'FECHADO', rotulo: 'Fechado' },
-]
+const podeEditar = computed(() => !!chamado.value && podeEditarChamado(chamado.value, auth.usuario))
+const podeExcluir = computed(() => !!chamado.value && podeExcluirChamado(chamado.value, auth.usuario))
 
 async function carregar() {
   carregando.value = true
@@ -38,21 +33,25 @@ async function carregar() {
   try {
     chamado.value = await buscarChamado(Number(route.params.id))
   } catch (e) {
-    erro.value = e instanceof Error ? e.message : 'não foi possível carregar o chamado'
+    erro.value = mensagemDeErro(e, 'não foi possível carregar o chamado')
   } finally {
     carregando.value = false
   }
 }
 
-async function mudarStatus(status: StatusChamado) {
-  if (!chamado.value) return
-  atualizandoStatus.value = true
+function aplicarAtualizacao(atualizado: Chamado) {
+  chamado.value = { ...atualizado, comentarios: chamado.value?.comentarios }
+}
+
+async function excluir() {
+  if (!chamado.value || !confirm(`Excluir o chamado #${chamado.value.id}? Essa ação não pode ser desfeita.`)) return
+  excluindo.value = true
   try {
-    chamado.value = await atualizarStatusChamado(chamado.value.id, status)
+    await excluirChamado(chamado.value.id)
+    router.push('/')
   } catch (e) {
-    erro.value = e instanceof Error ? e.message : 'não foi possível atualizar o status'
-  } finally {
-    atualizandoStatus.value = false
+    erro.value = mensagemDeErro(e, 'não foi possível excluir o chamado')
+    excluindo.value = false
   }
 }
 
@@ -63,7 +62,7 @@ async function enviarComentario() {
     chamado.value = await adicionarComentario(chamado.value.id, novoComentario.value.trim())
     novoComentario.value = ''
   } catch (e) {
-    erro.value = e instanceof Error ? e.message : 'não foi possível adicionar o comentário'
+    erro.value = mensagemDeErro(e, 'não foi possível adicionar o comentário')
   } finally {
     enviandoComentario.value = false
   }
@@ -73,9 +72,28 @@ onMounted(carregar)
 </script>
 
 <template>
-  <button type="button" class="btn btn-link text-decoration-none px-0 mb-3" @click="router.push('/')">
-    <i class="bi bi-arrow-left me-1"></i> Voltar para chamados
-  </button>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <button type="button" class="btn btn-link text-decoration-none px-0 me-auto" @click="router.push('/')">
+      <i class="bi bi-arrow-left me-1"></i> Voltar para chamados
+    </button>
+    <button
+      v-if="podeEditar"
+      type="button"
+      class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+      @click="router.push(`/chamados/${chamado?.id}/editar`)"
+    >
+      <i class="bi bi-pencil me-1"></i>Editar
+    </button>
+    <button
+      v-if="podeExcluir"
+      type="button"
+      class="btn btn-outline-danger btn-sm rounded-pill px-3"
+      :disabled="excluindo"
+      @click="excluir"
+    >
+      <i class="bi bi-trash me-1"></i>Excluir
+    </button>
+  </div>
 
   <div v-if="carregando" class="text-center text-body-secondary py-5">
     <div class="spinner-border spinner-border-sm me-2"></div>Carregando...
@@ -130,23 +148,12 @@ onMounted(carregar)
       <AlertError v-if="erro" :mensagem="erro" />
     </div>
 
-    <div class="col-12 col-lg-4">
+    <div class="col-12 col-lg-4 d-flex flex-column gap-4">
+      <PainelAtendimento v-if="auth.ehEquipeSuporte" :chamado="chamado" @atualizado="aplicarAtualizacao" />
+
       <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body p-4">
           <h2 class="h6 fw-bold mb-3">Detalhes</h2>
-
-          <div v-if="ehEquipeSuporte" class="mb-3">
-            <label for="status" class="form-label small text-body-secondary mb-1">Alterar status</label>
-            <select
-              id="status"
-              :value="chamado.status"
-              :disabled="atualizandoStatus"
-              class="form-select rounded-3"
-              @change="mudarStatus(($event.target as HTMLSelectElement).value as StatusChamado)"
-            >
-              <option v-for="opcao in opcoesStatus" :key="opcao.valor" :value="opcao.valor">{{ opcao.rotulo }}</option>
-            </select>
-          </div>
 
           <dl class="mb-0 d-flex flex-column gap-3 small">
             <div>

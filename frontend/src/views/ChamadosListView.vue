@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { listarChamados } from '@/services/chamados'
-import type { Chamado, StatusChamado } from '@/types'
+import { useAuthStore } from '@/stores/auth'
+import type { Chamado, FiltroAtribuicao, StatusChamado } from '@/types'
+import { mensagemDeErro } from '@/utils/erros'
 import AlertError from '@/components/AlertError.vue'
 import ChamadoCard from '@/components/ChamadoCard.vue'
+import ChamadosFiltros from '@/components/ChamadosFiltros.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
+
+const auth = useAuthStore()
 
 const chamados = ref<Chamado[]>([])
 const carregando = ref(true)
 const erro = ref('')
 const filtro = ref<StatusChamado | null>(null)
+const busca = ref('')
+const atribuicao = ref<FiltroAtribuicao>()
 
 const resumo = computed(() =>
   (
@@ -34,20 +41,25 @@ async function carregar() {
   carregando.value = true
   erro.value = ''
   try {
-    chamados.value = await listarChamados()
+    chamados.value = await listarChamados({ busca: busca.value, atribuicao: atribuicao.value })
   } catch (e) {
-    erro.value = e instanceof Error ? e.message : 'não foi possível carregar os chamados'
+    erro.value = mensagemDeErro(e, 'não foi possível carregar os chamados')
   } finally {
     carregando.value = false
   }
 }
 
-onMounted(carregar)
+let esperaBusca: ReturnType<typeof setTimeout> | undefined
+watch(busca, () => {
+  clearTimeout(esperaBusca)
+  esperaBusca = setTimeout(carregar, 300)
+})
+watch(atribuicao, carregar, { immediate: true })
 </script>
 
 <template>
   <div class="mb-4">
-    <h1 class="h3 fw-bold mb-1">Chamados</h1>
+    <h1 class="h3 fw-bold mb-1">{{ auth.ehEquipeSuporte ? 'Fila de atendimento' : 'Meus chamados' }}</h1>
     <p class="text-body-secondary mb-0">{{ chamados.length }} chamado(s) no total</p>
   </div>
 
@@ -75,6 +87,12 @@ onMounted(carregar)
       </button>
     </div>
   </div>
+
+  <ChamadosFiltros
+    v-model:busca="busca"
+    v-model:atribuicao="atribuicao"
+    :mostrar-atribuicao="auth.ehEquipeSuporte"
+  />
 
   <div v-if="filtro" class="d-flex align-items-center gap-2 mb-3 small">
     <span class="text-body-secondary">Filtrando por</span>
