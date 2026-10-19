@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 
 import { AutenticacaoController } from './auth.controller';
@@ -20,7 +21,10 @@ import { PapeisGuard } from './papeis.guard';
         }),
     ],
     controllers: [AutenticacaoController],
-    providers: [AutenticacaoService, AutenticacaoGuard, PapeisGuard],
-    exports: [AutenticacaoGuard, PapeisGuard, JwtModule],
+    providers: [
+        AutenticacaoService,
+        { provide: APP_GUARD, useClass: AutenticacaoGuard },
+        { provide: APP_GUARD, useClass: PapeisGuard },
+    ],
 })
 export class AutenticacaoModule {}

@@ -9,7 +9,6 @@ import {
     Patch,
     Post,
     Query,
-    UseGuards,
 } from '@nestjs/common';
 import {
     ApiBearerAuth,
@@ -22,8 +21,6 @@ import {
 import { Papel } from '@prisma/client';
 
 import { Papeis, UsuarioAtual } from '../auth/auth.decorator';
-import { AutenticacaoGuard } from '../auth/auth.guard';
-import { PapeisGuard } from '../auth/papeis.guard';
 import { UsuarioAutenticado } from '../auth/auth.types';
 import { AtualizarUsuarioDto } from './dto/atualizar-usuario.dto';
 import { CriarUsuarioDto } from './dto/criar-usuario.dto';
@@ -33,7 +30,6 @@ import { UsuariosService } from './usuarios.service';
 
 @ApiTags('Usuários')
 @Controller('usuarios')
-@UseGuards(AutenticacaoGuard, PapeisGuard)
 @ApiBearerAuth()
 export class UsuariosController {
     constructor(private readonly usuariosService: UsuariosService) {}

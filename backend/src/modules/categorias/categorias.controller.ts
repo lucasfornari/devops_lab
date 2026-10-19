@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiCreatedResponse,
@@ -10,15 +10,12 @@ import {
 import { Papel } from '@prisma/client';
 
 import { Papeis } from '../auth/auth.decorator';
-import { AutenticacaoGuard } from '../auth/auth.guard';
-import { PapeisGuard } from '../auth/papeis.guard';
 import { CategoriasService } from './categorias.service';
 import { CategoriaDto } from './dto/categoria-resposta.dto';
 import { SalvarCategoriaDto } from './dto/salvar-categoria.dto';
 
 @ApiTags('Categorias')
 @Controller('categorias')
-@UseGuards(AutenticacaoGuard, PapeisGuard)
 @ApiBearerAuth()
 export class CategoriasController {
     constructor(private readonly categoriasService: CategoriasService) {}

@@ -1,7 +1,9 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 
 import { PrismaService } from '../../shared/prisma/prisma.service';
+import { ROTA_PUBLICA } from './auth.decorator';
 import { UsuarioAutenticado } from './auth.types';
 
 @Injectable()
@@ -9,9 +11,18 @@ export class AutenticacaoGuard implements CanActivate {
     constructor(
         private readonly jwtService: JwtService,
         private readonly prisma: PrismaService,
+        private readonly reflector: Reflector,
     ) {}
 
     async canActivate(contexto: ExecutionContext): Promise<boolean> {
+        const publica = this.reflector.getAllAndOverride<boolean>(ROTA_PUBLICA, [
+            contexto.getHandler(),
+            contexto.getClass(),
+        ]);
+        if (publica) {
+            return true;
+        }
+
         const request = contexto.switchToHttp().getRequest<{
             headers: { authorization?: string };
             usuario?: UsuarioAutenticado;

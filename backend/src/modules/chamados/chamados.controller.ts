@@ -9,7 +9,6 @@ import {
     Patch,
     Post,
     Query,
-    UseGuards,
 } from '@nestjs/common';
 import {
     ApiBearerAuth,
@@ -22,8 +21,6 @@ import {
 import { Papel } from '@prisma/client';
 
 import { Papeis, UsuarioAtual } from '../auth/auth.decorator';
-import { AutenticacaoGuard } from '../auth/auth.guard';
-import { PapeisGuard } from '../auth/papeis.guard';
 import { UsuarioAutenticado } from '../auth/auth.types';
 import { AtualizarChamadoDto } from './dto/atualizar-chamado.dto';
 import { AtualizarResponsavelDto } from './dto/atualizar-responsavel.dto';
@@ -36,7 +33,6 @@ import { ChamadosService } from './chamados.service';
 
 @ApiTags('Chamados')
 @Controller('chamados')
-@UseGuards(AutenticacaoGuard, PapeisGuard)
 @ApiBearerAuth()
 export class ChamadosController {
     constructor(private readonly chamadosService: ChamadosService) {}
