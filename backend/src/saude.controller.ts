@@ -1,12 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { Public } from './modules/auth/auth.decorator';
+import { RotaPublica } from './modules/autenticacao/autenticacao.decorators';
 
 @ApiTags('Saúde')
 @Controller('health')
-@Public()
-export class AppController {
+@RotaPublica()
+export class SaudeController {
     @Get()
     @ApiOperation({ summary: 'Verifica se a API está no ar' })
     verificarSaude() {

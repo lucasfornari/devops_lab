@@ -52,8 +52,8 @@ projeto/
 │   │   ├── seed.ts          # Categorias padrão + primeiro ADMIN (idempotente)
 │   │   └── migrations/      # Histórico de migrations (gerado via `prisma migrate dev`)
 │   └── src/
-│       ├── modules/         # auth/, usuarios/, categorias/, chamados/ — controller/service/DTO (+ *.spec.ts)
-│       ├── shared/          # PrismaService, filtro global de erros e validação do env
+│       ├── modules/         # autenticacao/, usuarios/, categorias/, chamados/ — controller/service/DTO (+ *.spec.ts)
+│       ├── shared/          # PrismaService, filtro global de erros e validação das variáveis de ambiente
 │       ├── app.module.ts
 │       └── main.ts          # bootstrap + Swagger em /api/docs
 ├── frontend/

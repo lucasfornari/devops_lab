@@ -20,8 +20,8 @@ import {
 } from '@nestjs/swagger';
 import { Papel } from '@prisma/client';
 
-import { Papeis, UsuarioAtual } from '../auth/auth.decorator';
-import { UsuarioAutenticado } from '../auth/auth.types';
+import { PermitirPapeis, UsuarioAtual } from '../autenticacao/autenticacao.decorators';
+import { UsuarioAutenticado } from '../autenticacao/autenticacao.types';
 import { AtualizarUsuarioDto } from './dto/atualizar-usuario.dto';
 import { CriarUsuarioDto } from './dto/criar-usuario.dto';
 import { ListarUsuariosDto } from './dto/listar-usuarios.dto';
@@ -44,7 +44,7 @@ export class UsuariosController {
     @Get()
     @ApiOperation({ summary: 'Lista usuários, com filtro por papel e busca por nome/email (ADMIN)' })
     @ApiOkResponse({ type: [UsuarioDto] })
-    @Papeis(Papel.ADMIN)
+    @PermitirPapeis(Papel.ADMIN)
     listar(@Query() filtros: ListarUsuariosDto) {
         return this.usuariosService.listar(filtros);
     }
@@ -52,7 +52,7 @@ export class UsuariosController {
     @Post()
     @ApiOperation({ summary: 'Cria um usuário com qualquer papel (ADMIN)' })
     @ApiCreatedResponse({ type: UsuarioDto })
-    @Papeis(Papel.ADMIN)
+    @PermitirPapeis(Papel.ADMIN)
     criar(@Body() dados: CriarUsuarioDto) {
         return this.usuariosService.criar(dados);
     }
@@ -60,7 +60,7 @@ export class UsuariosController {
     @Patch(':id')
     @ApiOperation({ summary: 'Altera nome, email, papel ou senha de um usuário (ADMIN)' })
     @ApiOkResponse({ type: UsuarioDto })
-    @Papeis(Papel.ADMIN)
+    @PermitirPapeis(Papel.ADMIN)
     atualizar(
         @Param('id', ParseIntPipe) id: number,
         @UsuarioAtual() admin: UsuarioAutenticado,
@@ -73,7 +73,7 @@ export class UsuariosController {
     @HttpCode(204)
     @ApiOperation({ summary: 'Exclui um usuário sem chamados nem comentários (ADMIN)' })
     @ApiNoContentResponse()
-    @Papeis(Papel.ADMIN)
+    @PermitirPapeis(Papel.ADMIN)
     excluir(@Param('id', ParseIntPipe) id: number, @UsuarioAtual() admin: UsuarioAutenticado) {
         return this.usuariosService.excluir(id, admin);
     }

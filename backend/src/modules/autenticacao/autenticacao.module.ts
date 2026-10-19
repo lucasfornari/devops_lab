@@ -3,10 +3,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 
-import { AutenticacaoController } from './auth.controller';
-import { AutenticacaoGuard } from './auth.guard';
-import { AutenticacaoService } from './auth.service';
-import { PapeisGuard } from './papeis.guard';
+import { AutenticacaoController } from './autenticacao.controller';
+import { AutenticacaoGuard } from './autenticacao.guard';
+import { AutenticacaoService } from './autenticacao.service';
+import { PermissaoPorPapelGuard } from './permissao-por-papel.guard';
 
 @Module({
     imports: [
@@ -24,7 +24,7 @@ import { PapeisGuard } from './papeis.guard';
     providers: [
         AutenticacaoService,
         { provide: APP_GUARD, useClass: AutenticacaoGuard },
-        { provide: APP_GUARD, useClass: PapeisGuard },
+        { provide: APP_GUARD, useClass: PermissaoPorPapelGuard },
     ],
 })
 export class AutenticacaoModule {}

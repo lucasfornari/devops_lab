@@ -77,10 +77,10 @@ Validação: testes unitários do backend (`npm test`, sem e2e), type-check
 
 ### Backend — módulos por domínio, não por camada técnica
 
-`backend/src/modules/{auth,usuarios,categorias,chamados}/`, cada um com
+`backend/src/modules/{autenticacao,usuarios,categorias,chamados}/`, cada um com
 `*.module.ts` → `*.controller.ts` → `*.service.ts` e `dto/` para validação de
 entrada. Regras transversais ficam em `backend/src/shared/`: `PrismaService`
-(única instância do client do banco, via DI), `validarEnv` (o boot falha se
+(única instância do client do banco, via DI), `validarVariaveisDeAmbiente` (o boot falha se
 faltar `DATABASE_URL`/`JWT_SECRET`) e `FiltroDeErros` (converte exceções do Nest e
 erros conhecidos do Prisma — `P2025`/`P2002` — em respostas
 `{ status: 'error', message }`).
@@ -88,9 +88,11 @@ erros conhecidos do Prisma — `P2025`/`P2002` — em respostas
 ### Auth e papéis
 
 JWT emitido em `POST /api/auth/registrar` (sempre cria papel `USUARIO`) e
-`POST /api/auth/login`, verificado pelo `AutenticacaoGuard`, que popula o
-usuário autenticado na requisição. O `PapeisGuard` barra por papel
-(`USUARIO` | `AGENTE` | `ADMIN`). Regra
+`POST /api/auth/login`. Os dois guards são globais (`APP_GUARD`), então toda
+rota exige token, exceto as marcadas com `@RotaPublica()`. O
+`AutenticacaoGuard` verifica o token e popula o usuário autenticado na
+requisição; o `PermissaoPorPapelGuard` barra por papel (`USUARIO` | `AGENTE` |
+`ADMIN`) quando a rota tem `@PermitirPapeis(...)`. Regra
 de escopo dos chamados vive em `chamados.service.ts`: `USUARIO` só vê/comenta
 os próprios chamados (filtro por `solicitanteId`); `AGENTE`/`ADMIN` veem
 todos, e só eles podem mudar `status`/`responsavel`. O primeiro `ADMIN` vem do

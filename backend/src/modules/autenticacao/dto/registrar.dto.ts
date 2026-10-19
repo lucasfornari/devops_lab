@@ -2,6 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
+import { TAMANHO_MAXIMO_SENHA, TAMANHO_MINIMO_SENHA } from '../../../shared/seguranca/senha';
+
 export class RegistrarDto {
     @ApiProperty()
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
@@ -16,9 +18,9 @@ export class RegistrarDto {
     @MaxLength(160)
     email!: string;
 
-    @ApiProperty({ minLength: 6 })
+    @ApiProperty({ minLength: TAMANHO_MINIMO_SENHA, maxLength: TAMANHO_MAXIMO_SENHA })
     @IsString()
-    @MinLength(6, { message: 'senha deve ter ao menos 6 caracteres' })
-    @MaxLength(72)
+    @MinLength(TAMANHO_MINIMO_SENHA, { message: `senha deve ter ao menos ${TAMANHO_MINIMO_SENHA} caracteres` })
+    @MaxLength(TAMANHO_MAXIMO_SENHA)
     senha!: string;
 }

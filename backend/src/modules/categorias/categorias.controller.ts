@@ -9,7 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { Papel } from '@prisma/client';
 
-import { Papeis } from '../auth/auth.decorator';
+import { PermitirPapeis } from '../autenticacao/autenticacao.decorators';
 import { CategoriasService } from './categorias.service';
 import { CategoriaDto } from './dto/categoria-resposta.dto';
 import { SalvarCategoriaDto } from './dto/salvar-categoria.dto';
@@ -30,7 +30,7 @@ export class CategoriasController {
     @Post()
     @ApiOperation({ summary: 'Cria uma categoria (ADMIN)' })
     @ApiCreatedResponse({ type: CategoriaDto })
-    @Papeis(Papel.ADMIN)
+    @PermitirPapeis(Papel.ADMIN)
     criar(@Body() dados: SalvarCategoriaDto) {
         return this.categoriasService.criar(dados);
     }
@@ -38,7 +38,7 @@ export class CategoriasController {
     @Patch(':id')
     @ApiOperation({ summary: 'Renomeia uma categoria (ADMIN)' })
     @ApiOkResponse({ type: CategoriaDto })
-    @Papeis(Papel.ADMIN)
+    @PermitirPapeis(Papel.ADMIN)
     atualizar(@Param('id', ParseIntPipe) id: number, @Body() dados: SalvarCategoriaDto) {
         return this.categoriasService.atualizar(id, dados);
     }
@@ -47,7 +47,7 @@ export class CategoriasController {
     @HttpCode(204)
     @ApiOperation({ summary: 'Exclui uma categoria; os chamados dela ficam sem categoria (ADMIN)' })
     @ApiNoContentResponse()
-    @Papeis(Papel.ADMIN)
+    @PermitirPapeis(Papel.ADMIN)
     excluir(@Param('id', ParseIntPipe) id: number) {
         return this.categoriasService.excluir(id);
     }

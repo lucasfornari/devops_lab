@@ -3,7 +3,7 @@ import { Papel, Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { gerarHashSenha } from '../../shared/seguranca/senha';
-import { UsuarioAutenticado } from '../auth/auth.types';
+import { UsuarioAutenticado } from '../autenticacao/autenticacao.types';
 import { AtualizarUsuarioDto } from './dto/atualizar-usuario.dto';
 import { CriarUsuarioDto } from './dto/criar-usuario.dto';
 import { ListarUsuariosDto } from './dto/listar-usuarios.dto';

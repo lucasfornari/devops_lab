@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { Chamado, Papel, Prisma, StatusChamado } from '@prisma/client';
 
 import { PrismaService } from '../../shared/prisma/prisma.service';
-import { UsuarioAutenticado } from '../auth/auth.types';
+import { UsuarioAutenticado } from '../autenticacao/autenticacao.types';
 import { AtualizarChamadoDto } from './dto/atualizar-chamado.dto';
 import { AtualizarResponsavelDto } from './dto/atualizar-responsavel.dto';
 import { AtualizarStatusDto } from './dto/atualizar-status.dto';

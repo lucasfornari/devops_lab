@@ -12,7 +12,7 @@ export type Usuario = Schemas['UsuarioDto']
 export type Categoria = Schemas['CategoriaDto']
 export type Comentario = Schemas['ComentarioDto']
 export type Chamado = Schemas['ChamadoDto']
-export type AuthResposta = Schemas['AuthRespostaDto']
+export type AuthResposta = Schemas['AutenticacaoRespostaDto']
 
 export type NovoChamado = Schemas['CriarChamadoDto']
 export type EdicaoChamado = Schemas['AtualizarChamadoDto']

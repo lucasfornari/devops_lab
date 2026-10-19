@@ -20,8 +20,8 @@ import {
 } from '@nestjs/swagger';
 import { Papel } from '@prisma/client';
 
-import { Papeis, UsuarioAtual } from '../auth/auth.decorator';
-import { UsuarioAutenticado } from '../auth/auth.types';
+import { PermitirPapeis, UsuarioAtual } from '../autenticacao/autenticacao.decorators';
+import { UsuarioAutenticado } from '../autenticacao/autenticacao.types';
 import { AtualizarChamadoDto } from './dto/atualizar-chamado.dto';
 import { AtualizarResponsavelDto } from './dto/atualizar-responsavel.dto';
 import { AtualizarStatusDto } from './dto/atualizar-status.dto';
@@ -80,7 +80,7 @@ export class ChamadosController {
     @Patch(':id/status')
     @ApiOperation({ summary: 'Altera o status (AGENTE/ADMIN)' })
     @ApiOkResponse({ type: ChamadoDto })
-    @Papeis(Papel.AGENTE, Papel.ADMIN)
+    @PermitirPapeis(Papel.AGENTE, Papel.ADMIN)
     atualizarStatus(
         @Param('id', ParseIntPipe) id: number,
         @UsuarioAtual() usuario: UsuarioAutenticado,
@@ -92,7 +92,7 @@ export class ChamadosController {
     @Patch(':id/responsavel')
     @ApiOperation({ summary: 'Define o responsável (AGENTE só assume para si; ADMIN atribui a qualquer atendente)' })
     @ApiOkResponse({ type: ChamadoDto })
-    @Papeis(Papel.AGENTE, Papel.ADMIN)
+    @PermitirPapeis(Papel.AGENTE, Papel.ADMIN)
     atualizarResponsavel(
         @Param('id', ParseIntPipe) id: number,
         @UsuarioAtual() usuario: UsuarioAutenticado,

@@ -2,7 +2,7 @@ import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Papel } from '@prisma/client';
 
-import { PapeisGuard } from './papeis.guard';
+import { PermissaoPorPapelGuard } from './permissao-por-papel.guard';
 
 function criarContexto(papel?: Papel): ExecutionContext {
     return {
@@ -14,10 +14,10 @@ function criarContexto(papel?: Papel): ExecutionContext {
     } as unknown as ExecutionContext;
 }
 
-describe('PapeisGuard', () => {
+describe('PermissaoPorPapelGuard', () => {
     function criarGuard(papeisExigidos?: Papel[]) {
         const reflector = { getAllAndOverride: () => papeisExigidos } as unknown as Reflector;
-        return new PapeisGuard(reflector);
+        return new PermissaoPorPapelGuard(reflector);
     }
 
     it('libera quando a rota não exige papel', () => {

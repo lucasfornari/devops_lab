@@ -10,10 +10,10 @@ import { Prisma } from '@prisma/client';
 @Catch()
 export class FiltroDeErros implements ExceptionFilter {
     catch(erro: unknown, host: ArgumentsHost): void {
-        const response = host.switchToHttp().getResponse();
+        const resposta = host.switchToHttp().getResponse();
         const resultado = this.converterErro(erro);
 
-        response.status(resultado.status).json({
+        resposta.status(resultado.status).json({
             status: 'error',
             message: resultado.message,
         });
@@ -22,11 +22,11 @@ export class FiltroDeErros implements ExceptionFilter {
     private converterErro(erro: unknown): { status: number; message: string } {
         if (erro instanceof HttpException) {
             const status = erro.getStatus();
-            const resposta = erro.getResponse();
+            const corpoDoErro = erro.getResponse();
             const message =
-                typeof resposta === 'object' && resposta !== null && 'message' in resposta
-                    ? (resposta as { message: string | string[] }).message
-                    : resposta;
+                typeof corpoDoErro === 'object' && corpoDoErro !== null && 'message' in corpoDoErro
+                    ? (corpoDoErro as { message: string | string[] }).message
+                    : corpoDoErro;
 
             return {
                 status,

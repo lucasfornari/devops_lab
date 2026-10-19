@@ -12,7 +12,7 @@ export interface paths {
             cookie?: never;
         };
         /** Verifica se a API está no ar */
-        get: operations["AppController_verificarSaude"];
+        get: operations["SaudeController_verificarSaude"];
         put?: never;
         post?: never;
         delete?: never;
@@ -249,7 +249,7 @@ export interface components {
             email: string;
             papel: components["schemas"]["Papel"];
         };
-        AuthRespostaDto: {
+        AutenticacaoRespostaDto: {
             token: string;
             usuario: components["schemas"]["UsuarioDto"];
         };
@@ -341,7 +341,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    AppController_verificarSaude: {
+    SaudeController_verificarSaude: {
         parameters: {
             query?: never;
             header?: never;
@@ -376,7 +376,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthRespostaDto"];
+                    "application/json": components["schemas"]["AutenticacaoRespostaDto"];
                 };
             };
         };
@@ -399,7 +399,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthRespostaDto"];
+                    "application/json": components["schemas"]["AutenticacaoRespostaDto"];
                 };
             };
         };
