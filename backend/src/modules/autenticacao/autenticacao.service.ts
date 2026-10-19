@@ -4,6 +4,7 @@ import { Papel } from '@prisma/client';
 
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { compararSenha, gerarHashSenha } from '../../shared/seguranca/senha';
+import { DadosDoToken } from './autenticacao.types';
 import { LoginDto } from './dto/login.dto';
 import { RegistrarDto } from './dto/registrar.dto';
 
@@ -46,8 +47,10 @@ export class AutenticacaoService {
     }
 
     private respostaDeAutenticacao(usuario: { id: number; nome: string; email: string; papel: Papel }) {
+        const dadosDoToken: DadosDoToken = { id: usuario.id };
+
         return {
-            token: this.jwtService.sign({ id: usuario.id, papel: usuario.papel }),
+            token: this.jwtService.sign(dadosDoToken),
             usuario: {
                 id: usuario.id,
                 nome: usuario.nome,

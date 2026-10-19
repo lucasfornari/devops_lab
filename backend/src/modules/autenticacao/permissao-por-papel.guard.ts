@@ -1,26 +1,29 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Papel } from '@prisma/client';
 
 import { PAPEIS_PERMITIDOS } from './autenticacao.decorators';
-import { UsuarioAutenticado } from './autenticacao.types';
-import { Papel } from '@prisma/client';
+import { RequisicaoAutenticada } from './autenticacao.types';
 
 @Injectable()
 export class PermissaoPorPapelGuard implements CanActivate {
     constructor(private readonly reflector: Reflector) {}
 
     canActivate(contexto: ExecutionContext): boolean {
-        const papeis = this.reflector.getAllAndOverride<Papel[]>(PAPEIS_PERMITIDOS, [
+        const papeisPermitidos = this.reflector.getAllAndOverride<Papel[]>(PAPEIS_PERMITIDOS, [
             contexto.getHandler(),
             contexto.getClass(),
         ]);
 
-        if (!papeis?.length) {
+        const rotaNaoExigePapel = !papeisPermitidos || papeisPermitidos.length === 0;
+        if (rotaNaoExigePapel) {
             return true;
         }
 
-        const requisicao = contexto.switchToHttp().getRequest<{ usuario?: UsuarioAutenticado }>();
-        if (!requisicao.usuario || !papeis.includes(requisicao.usuario.papel)) {
+        const usuario = contexto.switchToHttp().getRequest<RequisicaoAutenticada>().usuario;
+        const usuarioTemPapelPermitido = usuario !== undefined && papeisPermitidos.includes(usuario.papel);
+
+        if (!usuarioTemPapelPermitido) {
             throw new ForbiddenException('acesso negado para este papel');
         }
 

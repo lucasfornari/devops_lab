@@ -4,7 +4,9 @@ import { JwtService } from '@nestjs/jwt';
 
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { ROTA_PUBLICA } from './autenticacao.decorators';
-import { UsuarioAutenticado } from './autenticacao.types';
+import { DadosDoToken, RequisicaoAutenticada, UsuarioAutenticado } from './autenticacao.types';
+
+const PREFIXO_BEARER = 'Bearer ';
 
 @Injectable()
 export class AutenticacaoGuard implements CanActivate {
@@ -15,44 +17,55 @@ export class AutenticacaoGuard implements CanActivate {
     ) {}
 
     async canActivate(contexto: ExecutionContext): Promise<boolean> {
+        if (this.rotaEhPublica(contexto)) {
+            return true;
+        }
+
+        const requisicao = contexto.switchToHttp().getRequest<RequisicaoAutenticada>();
+        const token = this.extrairToken(requisicao);
+        const dadosDoToken = this.verificarToken(token);
+
+        requisicao.usuario = await this.buscarUsuario(dadosDoToken.id);
+        return true;
+    }
+
+    private rotaEhPublica(contexto: ExecutionContext): boolean {
         const publica = this.reflector.getAllAndOverride<boolean>(ROTA_PUBLICA, [
             contexto.getHandler(),
             contexto.getClass(),
         ]);
-        if (publica) {
-            return true;
-        }
+        return publica === true;
+    }
 
-        const requisicao = contexto.switchToHttp().getRequest<{
-            headers: { authorization?: string };
-            usuario?: UsuarioAutenticado;
-        }>();
+    private extrairToken(requisicao: RequisicaoAutenticada): string {
         const cabecalho = requisicao.headers.authorization;
 
-        if (!cabecalho?.startsWith('Bearer ')) {
+        if (!cabecalho || !cabecalho.startsWith(PREFIXO_BEARER)) {
             throw new UnauthorizedException('token de autenticação ausente');
         }
 
-        const dadosDoToken = this.verificarToken(cabecalho.slice(7));
+        return cabecalho.slice(PREFIXO_BEARER.length);
+    }
 
-        // O papel vem do banco, e não do token, para que mudanças de papel e exclusões valham na hora.
+    private verificarToken(token: string): DadosDoToken {
+        try {
+            return this.jwtService.verify<DadosDoToken>(token);
+        } catch {
+            throw new UnauthorizedException('token de autenticação inválido');
+        }
+    }
+
+    // O papel vem do banco, e não do token, para que mudanças de papel e exclusões valham na hora.
+    private async buscarUsuario(id: number): Promise<UsuarioAutenticado> {
         const usuario = await this.prisma.usuario.findUnique({
-            where: { id: dadosDoToken.id },
+            where: { id },
             select: { id: true, papel: true },
         });
+
         if (!usuario) {
             throw new UnauthorizedException('usuário não encontrado');
         }
 
-        requisicao.usuario = usuario;
-        return true;
-    }
-
-    private verificarToken(token: string) {
-        try {
-            return this.jwtService.verify<UsuarioAutenticado>(token);
-        } catch {
-            throw new UnauthorizedException('token de autenticação inválido');
-        }
+        return usuario;
     }
 }
