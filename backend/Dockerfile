@@ -1,8 +1,8 @@
 # Imagem de dev: código-fonte roda direto via tsx (hot reload), usada pelo docker-compose.
-FROM node:22-alpine AS dev
+FROM node:22.23.5-alpine3.24 AS dev
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 RUN npx prisma generate
 RUN chmod +x docker-entrypoint.sh
@@ -11,7 +11,7 @@ ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
 # Compila o TypeScript e gera o client do Prisma, sem devDependencies no resultado final.
-FROM node:22-alpine AS build
+FROM node:22.23.5-alpine3.24 AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -20,7 +20,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Imagem de produção: usada pelos manifests em k8s/.
-FROM node:22-alpine AS prod
+FROM node:22.23.5-alpine3.24 AS prod
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./

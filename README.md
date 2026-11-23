@@ -12,6 +12,30 @@ têm `HorizontalPodAutoscaler` (nginx: 3-10 réplicas, backend: 2-8 réplicas,
 baseado em CPU/memória) — o `postgres` fica fixo em **1 réplica** (não escala
 horizontalmente sem replicação de dados).
 
+## Versões
+
+As dependências npm são fixas (sem `^`/`~`) nos `package.json`, e as imagens
+Docker usam tags exatas.
+
+| Camada | Tecnologia | Versão |
+|---|---|---|
+| Infra | Node.js (imagem) | 22.23.5 (`node:22.23.5-alpine3.24`) |
+| Infra | nginx | 1.30.8 (`nginx:1.30.8-alpine3.24`) |
+| Infra | PostgreSQL | 16.16 (`postgres:16.16-alpine3.24`) |
+| Infra | Kubernetes (nó do Kind) | 1.36.1 |
+| Infra | Metrics Server | 0.9.1 |
+| Backend | NestJS | 11.2.7 |
+| Backend | Prisma | 6.19.3 |
+| Backend | TypeScript | 5.9.3 |
+| Backend | Jest | 30.5.2 |
+| Frontend | Vue | 3.5.42 |
+| Frontend | Vue Router | 5.3.1 |
+| Frontend | Pinia | 4.0.3 |
+| Frontend | Vite | 8.3.0 |
+| Frontend | TypeScript | 6.0.3 |
+| Frontend | Bootstrap | 5.3.8 |
+| Frontend | Bootstrap Icons | 1.13.1 |
+
 ## Autenticação e papéis
 
 A API usa autenticação por **JWT** (`Authorization: Bearer <token>`), emitido
@@ -174,7 +198,7 @@ Acesso local (tudo através do nginx, porta única):
 O Deployment do nginx usa a imagem `projeto-nginx:latest` (`devops/nginx/Dockerfile.prod`
 — builda o frontend e embute o `dist/`) e o Deployment da API usa
 `projeto-backend:latest` (`backend/Dockerfile`, estágio `prod`). O Postgres
-usa a imagem oficial `postgres:16-alpine`, não precisa de build.
+usa a imagem oficial `postgres:16.16-alpine3.24`, não precisa de build.
 
 ```bash
 docker build -f devops/nginx/Dockerfile.prod -t projeto-nginx:latest .
@@ -189,7 +213,7 @@ Clusters gerenciados (EKS/GKE/AKS) geralmente já vêm com um equivalente; em
 Minikube/Kind precisa instalar manualmente:
 
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.1/components.yaml
 
 # Minikube
 minikube addons enable metrics-server

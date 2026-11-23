@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 CLUSTER_NAME="${KIND_CLUSTER_NAME:-fullstack}"
 KIND_CONTEXT="kind-${CLUSTER_NAME}"
+KIND_NODE_IMAGE="kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5"
 
 require_command() {
     command -v "$1" >/dev/null 2>&1 || {
@@ -22,7 +23,7 @@ cd "$ROOT_DIR"
 
 if ! kind get clusters | grep -Fxq "$CLUSTER_NAME"; then
     echo "Criando cluster Kind '$CLUSTER_NAME'..."
-    kind create cluster --name "$CLUSTER_NAME"
+    kind create cluster --name "$CLUSTER_NAME" --image "$KIND_NODE_IMAGE"
 else
     echo "Cluster Kind '$CLUSTER_NAME' já existe."
 fi
@@ -50,7 +51,7 @@ echo "Instalando/atualizando Metrics Server..."
 # objeto e, para o APIService do metrics-server, grava resourceVersion/uid na
 # annotation de last-applied-configuration, quebrando o apply seguinte com
 # "resourceVersion: Invalid value: 0: must be specified for an update").
-curl -sL https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml \
+curl -sL https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.1/components.yaml \
     | sed -E 's/^([[:space:]]*)- args:[[:space:]]*$/\1- args:\n\1  - --kubelet-insecure-tls/' \
     | kubectl apply -f -
 

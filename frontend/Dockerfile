@@ -1,14 +1,14 @@
 # Imagem de dev: servidor do Vite com hot reload, usada pelo docker-compose.
-FROM node:22-alpine AS dev
+FROM node:22.23.5-alpine3.24 AS dev
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 COPY . .
 EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host"]
 
 # Build de produção: gera dist/ estático, mesmo processo usado em devops/nginx/Dockerfile.prod.
-FROM node:22-alpine AS build
+FROM node:22.23.5-alpine3.24 AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
