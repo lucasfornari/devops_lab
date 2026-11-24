@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AlertError from '@/components/AlertError.vue'
+import CampoSenha from '@/components/CampoSenha.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -85,15 +86,7 @@ async function enviar() {
               <label for="senha" class="form-label small fw-semibold">Senha</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                <input
-                  id="senha"
-                  v-model="senha"
-                  type="password"
-                  required
-                  minlength="6"
-                  maxlength="72"
-                  class="form-control"
-                />
+                <CampoSenha id="senha" v-model="senha" required minlength="6" maxlength="72" />
               </div>
             </div>
 

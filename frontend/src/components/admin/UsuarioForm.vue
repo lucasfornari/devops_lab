@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import type { NovoUsuario, Papel, Usuario } from '@/types'
+import CampoSenha from '@/components/CampoSenha.vue'
 import { ROTULOS_PAPEL } from '@/utils/rotulos'
 
 const props = defineProps<{ usuario: Usuario | null; salvando: boolean }>()
@@ -39,17 +40,17 @@ function enviar() {
     </div>
     <div class="col-12 col-md-6">
       <label for="usuario-senha" class="form-label small fw-semibold">Senha</label>
-      <input
-        id="usuario-senha"
-        v-model="senha"
-        type="password"
-        :required="!usuario"
-        minlength="6"
-        maxlength="72"
-        :placeholder="usuario ? 'Deixe em branco para manter' : 'Mínimo de 6 caracteres'"
-        autocomplete="new-password"
-        class="form-control rounded-3"
-      />
+      <div class="input-group" style="--bs-border-radius: var(--bs-border-radius-lg)">
+        <CampoSenha
+          id="usuario-senha"
+          v-model="senha"
+          :required="!usuario"
+          minlength="6"
+          maxlength="72"
+          :placeholder="usuario ? 'Deixe em branco para manter' : 'Mínimo de 6 caracteres'"
+          autocomplete="new-password"
+        />
+      </div>
     </div>
     <div class="col-12 col-md-6">
       <label for="usuario-papel" class="form-label small fw-semibold">Papel</label>
