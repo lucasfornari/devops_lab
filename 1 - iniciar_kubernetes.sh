@@ -23,7 +23,16 @@ cd "$ROOT_DIR"
 
 if ! kind get clusters | grep -Fxq "$CLUSTER_NAME"; then
     echo "Criando cluster Kind '$CLUSTER_NAME'..."
-    kind create cluster --name "$CLUSTER_NAME" --image "$KIND_NODE_IMAGE"
+    kind create cluster --name "$CLUSTER_NAME" --image "$KIND_NODE_IMAGE" --config - <<EOF
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8080
+        listenAddress: "127.0.0.1"
+EOF
 else
     echo "Cluster Kind '$CLUSTER_NAME' já existe."
 fi
@@ -82,6 +91,9 @@ echo
 kubectl get services
 
 echo
-echo "Aplicação disponível via:"
-echo "  kubectl port-forward service/projeto-nginx 8080:80"
-echo "  http://localhost:8080"
+if docker port "${CLUSTER_NAME}-control-plane" 30080/tcp >/dev/null 2>&1; then
+    echo "Aplicação disponível em http://localhost:8080"
+else
+    echo "Este cluster foi criado sem o mapeamento da porta 8080. Recrie-o ou use:"
+    echo "  kubectl port-forward service/projeto-nginx 8080:80"
+fi

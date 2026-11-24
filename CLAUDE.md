@@ -60,8 +60,9 @@ nenhum nesse modo.
 "./2 - terminar_kubernetes.sh" # remove os manifests de k8s/ e destrói o cluster Kind (apaga o Postgres)
 ```
 
-Ambos aceitam `KIND_CLUSTER_NAME=<nome>` para usar outro cluster. Após `1 - iniciar_kubernetes.sh`:
-`kubectl port-forward service/projeto-nginx 8080:80`.
+Ambos aceitam `KIND_CLUSTER_NAME=<nome>` para usar outro cluster. Após `1 - iniciar_kubernetes.sh`,
+acesse `http://localhost:8080` (o cluster Kind mapeia a NodePort 30080 para a 8080 do host;
+não dá para usar junto com o Compose, que ocupa a mesma porta).
 
 Build manual das imagens (usadas pelos manifests em `k8s/`):
 

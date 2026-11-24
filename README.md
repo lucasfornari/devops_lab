@@ -395,11 +395,12 @@ Para usar outro nome de cluster:
 KIND_CLUSTER_NAME=meu-cluster "./1 - iniciar_kubernetes.sh"
 ```
 
-Ao final, acesse a aplicação com:
+Ao final, acesse a aplicação em **http://localhost:8080**: o cluster é criado
+com a `NodePort` 30080 mapeada para a porta 8080 da máquina. Por isso, o Docker
+Compose e o cluster não podem estar no ar ao mesmo tempo.
 
-```bash
-kubectl port-forward service/projeto-nginx 8080:80
-```
+> Clusters criados antes desse mapeamento precisam ser recriados (apaga o
+> Postgres) ou acessados com `kubectl port-forward service/projeto-nginx 8080:80`.
 
 ### Encerrar o ambiente
 
