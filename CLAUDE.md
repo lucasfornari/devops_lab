@@ -55,12 +55,12 @@ nenhum nesse modo.
 ### Kubernetes (via cluster Kind local)
 
 ```bash
-./_init.sh   # cria/atualiza cluster Kind "fullstack", builda e carrega as imagens,
-             # instala Metrics Server e aplica k8s/ (idempotente, pode rodar de novo)
-./_down.sh   # remove os manifests de k8s/ e destrói o cluster Kind (apaga o Postgres)
+"./1 - iniciar_kubernetes.sh"  # cria/atualiza cluster Kind "fullstack", builda e carrega as imagens,
+                                 # instala Metrics Server e aplica k8s/ (idempotente, pode rodar de novo)
+"./2 - terminar_kubernetes.sh" # remove os manifests de k8s/ e destrói o cluster Kind (apaga o Postgres)
 ```
 
-Ambos aceitam `KIND_CLUSTER_NAME=<nome>` para usar outro cluster. Após `_init.sh`:
+Ambos aceitam `KIND_CLUSTER_NAME=<nome>` para usar outro cluster. Após `1 - iniciar_kubernetes.sh`:
 `kubectl port-forward service/projeto-nginx 8080:80`.
 
 Build manual das imagens (usadas pelos manifests em `k8s/`):
@@ -178,7 +178,7 @@ CPU/memória) escalam horizontalmente; `postgres` fica fixo em 1 réplica (sem
 replicação de dados, usa PVC para persistência). `backend-secret.yaml` guarda
 o `JWT_SECRET`; as credenciais do Postgres continuam em `postgres-secret.yaml`
 e são reaproveitadas pelo `backend` (via `secretKeyRef`) pro entrypoint montar
-a `DATABASE_URL`. HPA exige `metrics-server` no cluster — `_init.sh` já cuida
+a `DATABASE_URL`. HPA exige `metrics-server` no cluster — `1 - iniciar_kubernetes.sh` já cuida
 disso, incluindo o patch `--kubelet-insecure-tls` necessário em Kind.
 
 ## Coisas a observar ao editar
@@ -193,7 +193,7 @@ disso, incluindo o patch `--kubelet-insecure-tls` necessário em Kind.
 - Ao mudar algo em `backend/` ou `frontend/` ou em `devops/nginx/Dockerfile.prod`, lembre
   que as imagens usadas pelo Kubernetes precisam ser reconstruídas e
   recarregadas no cluster (`docker build` + `kind load docker-image`, ou
-  simplesmente rodar `_init.sh` de novo) — `kubectl apply` sozinho não repuxa
+  simplesmente rodar `1 - iniciar_kubernetes.sh` de novo) — `kubectl apply` sozinho não repuxa
   uma imagem `:latest` já cacheada no cluster.
 - Credenciais do Postgres em `k8s/postgres-secret.yaml`, o `JWT_SECRET` em
   `k8s/backend-secret.yaml` e as credenciais no `docker-compose.yml` são fixas

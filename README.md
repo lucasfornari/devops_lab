@@ -377,7 +377,7 @@ instalados e que o Docker está em execução.
 ### Inicializar o ambiente
 
 ```bash
-./_init.sh
+"./1 - iniciar_kubernetes.sh"
 ```
 
 O script:
@@ -392,7 +392,7 @@ O script:
 Para usar outro nome de cluster:
 
 ```bash
-KIND_CLUSTER_NAME=meu-cluster ./_init.sh
+KIND_CLUSTER_NAME=meu-cluster "./1 - iniciar_kubernetes.sh"
 ```
 
 Ao final, acesse a aplicação com:
@@ -404,7 +404,7 @@ kubectl port-forward service/projeto-nginx 8080:80
 ### Encerrar o ambiente
 
 ```bash
-./_down.sh
+"./2 - terminar_kubernetes.sh"
 ```
 
 O script remove os recursos definidos em `k8s/` e destrói o cluster Kind,
@@ -412,10 +412,10 @@ incluindo o PVC do Postgres e os dados armazenados nele. Para selecionar outro
 cluster, use a mesma variável:
 
 ```bash
-KIND_CLUSTER_NAME=meu-cluster ./_down.sh
+KIND_CLUSTER_NAME=meu-cluster "./2 - terminar_kubernetes.sh"
 ```
 
-> Use `_down.sh` somente quando quiser recriar o ambiente do zero. Para apenas
+> Use `2 - terminar_kubernetes.sh` somente quando quiser recriar o ambiente do zero. Para apenas
 > parar os containers do Docker Compose, use `docker compose stop` ou
 > `docker compose down`, conforme a necessidade.
 
@@ -484,13 +484,13 @@ nome com `kind get clusters` ou `docker ps --filter "name=control-plane"`.
 
 ```bash
 # inicializar cluster, imagens, Metrics Server e manifests
-./_init.sh
+"./1 - iniciar_kubernetes.sh"
 
 # acompanhar
 kubectl get pods -w
 
 # encerrar e destruir o cluster Kind
-./_down.sh
+"./2 - terminar_kubernetes.sh"
 ```
 
 ---
