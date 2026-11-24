@@ -69,7 +69,7 @@ projeto/
 │       └── conf.d.prod/
 │           └── default.conf    # Prod: serve o dist/ do frontend e faz proxy de "/api/" pro backend
 ├── backend/
-│   ├── Dockerfile           # Multi-stage: dev (tsx watch), build e prod (compilado)
+│   ├── Dockerfile           # Multi-stage: dev (ts-node), build e prod (compilado)
 │   ├── docker-entrypoint.sh # Monta DATABASE_URL se necessário, roda `prisma migrate deploy` e o seed antes de subir
 │   ├── prisma/
 │   │   ├── schema.prisma    # Modelos Usuario, Categoria, Chamado, Comentario

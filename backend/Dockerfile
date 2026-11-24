@@ -1,4 +1,4 @@
-# Imagem de dev: código-fonte roda direto via tsx (hot reload), usada pelo docker-compose.
+# Imagem de dev: código-fonte roda direto via ts-node (sem hot reload), usada pelo docker-compose.
 FROM node:22.23.5-alpine3.24 AS dev
 WORKDIR /app
 COPY package*.json ./

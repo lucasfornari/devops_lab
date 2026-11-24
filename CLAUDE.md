@@ -19,7 +19,7 @@ cd backend
 npm install
 npx prisma generate              # regenera o client após mudar schema.prisma
 npx prisma migrate dev --name x  # cria + aplica uma migration (precisa de Postgres acessível)
-npm run dev                      # tsx watch — hot reload local, fora de container
+npm run dev                      # ts-node — sem hot reload, reinicie após mudar o código
 npx tsc --noEmit                 # type-check
 npm test                         # testes unitários (Jest, *.spec.ts ao lado do código)
 npm run seed                     # categorias padrão + primeiro ADMIN (ADMIN_EMAIL/ADMIN_SENHA)
